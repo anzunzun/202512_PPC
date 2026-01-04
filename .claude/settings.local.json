@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "Bash(bash:*)",
+      "Bash(git --version:*)",
+      "Bash(git worktree:*)",
+      "Bash(tmux:*)",
+      "Bash(wsl --status)",
+      "Bash(wsl -d Ubuntu-24.04 -- bash -c \"sudo apt update && sudo apt install -y tmux\")",
+      "Bash(wsl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx prisma validate:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(docker:*)",
+      "Bash(where psql:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx tsx:*)"
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ResearchProject {
+  id        String   @id @default(uuid())
+  country   String
+  genre     String
+  status    String   // pending | completed | rejected
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  competitorSites CompetitorSite[]
+  riskScore       RiskScore?
+}
+
+model CompetitorSite {
+  id                   String @id @default(uuid())
+  domain               String
+  lpStructureType      String
+  brandDependencyScore Float
+  projectId            String
+
+  project ResearchProject @relation(fields: [projectId], references: [id])
+}
+
+model RiskScore {
+  id             String @id @default(uuid())
+  trademarkRisk  Float
+  adPolicyRisk   Float
+  bridgePageRisk Float
+  totalScore     Float
+  projectId      String @unique
+
+  project ResearchProject @relation(fields: [projectId], references: [id])
+}
