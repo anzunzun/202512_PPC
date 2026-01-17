@@ -8,34 +8,112 @@ datasource db {
 }
 
 model ResearchProject {
-  id        String   @id @default(uuid())
-  country   String
-  genre     String
-  status    String   // pending | completed | rejected
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id              String                @id @default(uuid())
+  country         String
+  genre           String
+  status          String
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
   competitorSites CompetitorSite[]
+  items           ResearchItem[]
+  templateItems   ResearchProjectItem[]
+  researchRuns    ResearchRun[]
   riskScore       RiskScore?
 }
 
+model ResearchItem {
+  id        String          @id @default(cuid())
+  projectId String
+  label     String
+  value     String          @default("")
+  type      String          @default("text")
+  order     Int
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  project   ResearchProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model ResearchItemTemplate {
+  id           String                @id @default(cuid())
+  scope        String                @default("PPC")
+  label        String
+  type         ItemType              @default(text)
+  order        Int
+  isActive     Boolean               @default(true)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  key          String?
+  projectItems ResearchProjectItem[]
+
+  @@unique([scope, label])
+  @@unique([scope, key])
+  @@index([scope, isActive])
+}
+
+model ResearchProjectItem {
+  id         String               @id @default(cuid())
+  projectId  String
+  templateId String
+  value      String               @default("")
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  project    ResearchProject      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  template   ResearchItemTemplate @relation(fields: [templateId], references: [id])
+
+  @@unique([projectId, templateId])
+  @@index([projectId])
+  @@index([templateId])
+}
+
 model CompetitorSite {
-  id                   String @id @default(uuid())
+  id                   String          @id @default(uuid())
   domain               String
   lpStructureType      String
   brandDependencyScore Float
   projectId            String
-
-  project ResearchProject @relation(fields: [projectId], references: [id])
+  project              ResearchProject @relation(fields: [projectId], references: [id])
 }
 
 model RiskScore {
-  id             String @id @default(uuid())
+  id             String          @id @default(uuid())
   trademarkRisk  Float
   adPolicyRisk   Float
   bridgePageRisk Float
   totalScore     Float
-  projectId      String @unique
+  projectId      String          @unique
+  project        ResearchProject @relation(fields: [projectId], references: [id])
+}
 
-  project ResearchProject @relation(fields: [projectId], references: [id])
+model AppSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ResearchRun {
+  id           String          @id @default(uuid())
+  projectId    String
+  scope        String          @default("PPC")
+  provider     String          @default("demo")
+  status       String
+  startedAt    DateTime        @default(now())
+  finishedAt   DateTime?
+  durationMs   Int?
+  resultJson   Json?
+  errorMessage String?
+  project      ResearchProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, startedAt])
+}
+
+enum ItemType {
+  text
+  url
+  number
+  money
+  note
 }

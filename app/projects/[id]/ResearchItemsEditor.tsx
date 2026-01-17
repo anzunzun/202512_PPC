@@ -1,133 +1,263 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { saveResearchItems } from "@/app/actions/research";
+import React, { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  saveProjectResearchItems,
+  type ProjectItemView,
+} from "@/app/actions/researchItems";
 
-type Item = {
-  id?: string;
-  label: string;
-  value: string;
-  type: "text" | "url" | "number" | "money" | "note";
-  order: number;
-};
+type Row = ProjectItemView;
+
+/**
+ * UIが「空っぽ」を見せるために出しがちな記号を、入力/保存の観点では空扱いにする
+ * ※「— が残って安全版で選べない」系の根本対策
+ */
+function normalizeEmptyLike(input: unknown): string {
+  const t = String(input ?? "").trim();
+
+  const empties = new Set([
+    "",
+    "—",
+    "–",
+    "―",
+    "-",
+    "ー",
+    "null",
+    "undefined",
+  ]);
+
+  if (empties.has(t)) return "";
+  return t;
+}
+
+/** 初期表示用：DBに残ってしまった “—” 等があっても UI では空欄に見せる */
+function normalizeForDisplay(rows: Row[]) {
+  return rows
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((r) => ({
+      ...r,
+      value: normalizeEmptyLike(r.value),
+    }));
+}
+
+/** 保存用： “—” 等を空に寄せて server action に渡す（＝DBに残らない） */
+function normalizeForSave(rows: Row[]) {
+  return rows
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((r) => ({
+      templateId: r.templateId,
+      value: normalizeEmptyLike(r.value ?? ""),
+    }));
+}
+
+function stableKey(payload: Array<{ templateId: string; value: string }>) {
+  // 並びは normalizeForSave 側で安定してる前提
+  return JSON.stringify(payload);
+}
 
 export default function ResearchItemsEditor({
   projectId,
   initialItems,
 }: {
   projectId: string;
-  initialItems: Item[];
+  initialItems: Row[];
 }) {
-  const [items, setItems] = useState<Item[]>(
-    (initialItems ?? []).map((x, idx) => ({
-      ...x,
-      value: x.value ?? "",
-      type: (x.type ?? "text") as Item["type"],
-      order: x.order ?? idx,
-    }))
+  // ★初期描画時点で “—” 等を空欄に寄せる（表示上の事故防止）
+  const initialSorted = useMemo(
+    () => normalizeForDisplay(initialItems ?? []),
+    [initialItems]
   );
+
+  const [rows, setRows] = useState<Row[]>(() => initialSorted);
 
   const [isPending, startTransition] = useTransition();
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const nextOrder = useMemo(
-    () => (items.length ? Math.max(...items.map((i) => i.order)) + 1 : 0),
-    [items]
+  // 「保存済みの基準」：初期値から始めて、保存成功したら更新する
+  const [baselineKey, setBaselineKey] = useState<string>(() =>
+    stableKey(normalizeForSave(initialSorted))
   );
 
-  const addRow = () => {
-    setItems((prev) => [
-      ...prev,
-      { label: "", value: "", type: "text", order: nextOrder },
-    ]);
-  };
+  const normalized = useMemo(() => normalizeForSave(rows), [rows]);
+  const currentKey = useMemo(() => stableKey(normalized), [normalized]);
+  const isDirty = useMemo(
+    () => currentKey !== baselineKey,
+    [currentKey, baselineKey]
+  );
 
-  const removeRow = (index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index).map((x, idx) => ({ ...x, order: idx })));
-  };
+  // initialItems が変わったときの同期
+  // - 未保存(isDirty) があるときは上書きしない（事故防止）
+  // - 未保存が無いなら、テンプレ増減/並び替えを即反映
+  useEffect(() => {
+    if (isDirty) return;
 
-  const move = (from: number, to: number) => {
-    setItems((prev) => {
-      if (to < 0 || to >= prev.length) return prev;
-      const copy = [...prev];
-      const [picked] = copy.splice(from, 1);
-      copy.splice(to, 0, picked);
-      return copy.map((x, idx) => ({ ...x, order: idx }));
-    });
-  };
+    setRows(initialSorted);
+    setBaselineKey(stableKey(normalizeForSave(initialSorted)));
+    setError(null);
+    setSavedAt(null);
+  }, [initialSorted, isDirty]);
 
-  const update = (index: number, patch: Partial<Item>) => {
-    setItems((prev) =>
-      prev.map((x, i) => (i === index ? { ...x, ...patch } : x))
+  const updateValue = (templateId: string, value: string) => {
+    setRows((prev) =>
+      prev.map((r) => (r.templateId === templateId ? { ...r, value } : r))
     );
+    // 編集した瞬間に「保存しました」を消す（誤認防止）
+    setSavedAt(null);
+    setError(null);
+  };
+
+  const clearValue = (templateId: string) => {
+    updateValue(templateId, "");
   };
 
   const save = () => {
-    const normalized = items.map((x, idx) => ({ ...x, order: idx }));
+    if (isPending) return;
+
+    setError(null);
+    setSavedAt(null);
+
     startTransition(async () => {
-      await saveResearchItems(projectId, normalized);
+      try {
+        // normalized は “—” 等を空に寄せた payload
+        await saveProjectResearchItems(projectId, normalized, "PPC");
+
+        const now = new Date().toLocaleString();
+        setSavedAt(now);
+
+        // ★ 保存成功したら「今の値」を基準にする
+        setBaselineKey(stableKey(normalized));
+      } catch (e: any) {
+        setError(e?.message ?? "保存に失敗しました");
+      }
     });
   };
 
   return (
     <div style={{ display: "grid", gap: 10 }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <button type="button" onClick={addRow} style={btnOutline}>
-          ＋ 追加
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          type="button"
+          onClick={save}
+          disabled={isPending || !isDirty}
+          style={{
+            ...btnPrimary,
+            opacity: isPending || !isDirty ? 0.6 : 1,
+            cursor: isPending || !isDirty ? "not-allowed" : "pointer",
+          }}
+          title={!isDirty ? "変更がないので保存不要です" : undefined}
+        >
+          {isPending ? "保存中..." : isDirty ? "保存" : "保存済み"}
         </button>
-        <button type="button" onClick={save} disabled={isPending} style={btnPrimary}>
-          {isPending ? "保存中..." : "保存"}
-        </button>
+
         <span style={{ color: "#666", fontSize: 12 }}>
           （保存後に Ctrl+R で反映確認）
+        </span>
+
+        {savedAt && (
+          <span style={{ fontSize: 12, color: "#0a7" }}>
+            保存しました：{savedAt}
+          </span>
+        )}
+        {error && (
+          <span style={{ fontSize: 12, color: "#c00" }}>エラー：{error}</span>
+        )}
+        {!error && !savedAt && isDirty && (
+          <span style={{ fontSize: 12, color: "#b45309" }}>
+            未保存の変更があります
+          </span>
+        )}
+
+        <span style={{ fontSize: 12, color: "#666" }}>
+          ※「— / - / 全角ダッシュ」だけの入力は自動で空欄扱い
         </span>
       </div>
 
       <div style={{ display: "grid", gap: 10 }}>
-        {items.map((item, idx) => (
-          <div
-            key={item.id ?? `new-${idx}`}
-            style={{ border: "1px solid #ddd", padding: 10, borderRadius: 10 }}
-          >
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <button type="button" onClick={() => move(idx, idx - 1)} style={miniBtn}>
-                ↑
-              </button>
-              <button type="button" onClick={() => move(idx, idx + 1)} style={miniBtn}>
-                ↓
-              </button>
+        {rows
+          .slice()
+          .sort((a, b) => a.order - b.order)
+          .map((r) => {
+            const displayValue = normalizeEmptyLike(r.value);
+            const hasValue = displayValue !== "";
 
-              <select
-                value={item.type}
-                onChange={(e) => update(idx, { type: e.target.value as Item["type"] })}
-                style={{ height: 34 }}
+            return (
+              <div
+                key={r.templateId}
+                style={{
+                  border: "1px solid #ddd",
+                  padding: 10,
+                  borderRadius: 10,
+                }}
               >
-                <option value="text">text</option>
-                <option value="url">url</option>
-                <option value="number">number</option>
-                <option value="money">money</option>
-                <option value="note">note</option>
-              </select>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                    <div style={{ fontWeight: 800, minWidth: 160 }}>{r.label}</div>
+                    <div style={{ fontSize: 12, color: "#666" }}>type: {r.type}</div>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: hasValue ? "#065f46" : "#6b7280",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {hasValue ? "入力あり" : "空欄"}
+                    </div>
+                  </div>
 
-              <input
-                placeholder="項目名（例：ターゲットKW）"
-                value={item.label}
-                onChange={(e) => update(idx, { label: e.target.value })}
-                style={{ flex: 1, height: 34, padding: "0 10px" }}
-              />
+                  <button
+                    type="button"
+                    onClick={() => clearValue(r.templateId)}
+                    disabled={isPending || !hasValue}
+                    style={{
+                      ...btnGhost,
+                      opacity: isPending || !hasValue ? 0.5 : 1,
+                      cursor: isPending || !hasValue ? "not-allowed" : "pointer",
+                    }}
+                    title={!hasValue ? "すでに空欄です" : "この項目を空欄に戻す（保存で削除扱い）"}
+                  >
+                    クリア
+                  </button>
+                </div>
 
-              <button type="button" onClick={() => removeRow(idx)} style={btnDanger}>
-                削除
-              </button>
-            </div>
-
-            <textarea
-              placeholder="内容"
-              value={item.value}
-              onChange={(e) => update(idx, { value: e.target.value })}
-              style={{ width: "100%", marginTop: 8, minHeight: 90, padding: 10 }}
-            />
-          </div>
-        ))}
+                <textarea
+                  placeholder="内容（空欄にしたい場合は何も入れない）"
+                  value={displayValue}
+                  onChange={(e) => updateValue(r.templateId, e.target.value)}
+                  onBlur={(e) => {
+                    // ★ “—” 等だけ貼られても、フォーカス外したら自動で空欄にする
+                    const v = normalizeEmptyLike(e.target.value);
+                    if (v !== e.target.value) updateValue(r.templateId, v);
+                  }}
+                  disabled={isPending}
+                  style={{
+                    width: "100%",
+                    marginTop: 8,
+                    minHeight: 90,
+                    padding: 10,
+                    opacity: isPending ? 0.7 : 1,
+                  }}
+                />
+              </div>
+            );
+          })}
       </div>
     </div>
   );
@@ -140,35 +270,13 @@ const btnPrimary: React.CSSProperties = {
   background: "#111",
   color: "#fff",
   fontWeight: 800,
-  cursor: "pointer",
 };
 
-const btnOutline: React.CSSProperties = {
-  padding: "10px 14px",
+const btnGhost: React.CSSProperties = {
+  padding: "8px 10px",
   borderRadius: 10,
-  border: "1px solid #111",
+  border: "1px solid #ddd",
   background: "#fff",
   color: "#111",
   fontWeight: 800,
-  cursor: "pointer",
-};
-
-const btnDanger: React.CSSProperties = {
-  padding: "8px 10px",
-  borderRadius: 10,
-  border: "1px solid #c00",
-  background: "#fff",
-  color: "#c00",
-  fontWeight: 800,
-  cursor: "pointer",
-};
-
-const miniBtn: React.CSSProperties = {
-  width: 34,
-  height: 34,
-  borderRadius: 10,
-  border: "1px solid #111",
-  background: "#fff",
-  cursor: "pointer",
-  fontWeight: 900,
 };
