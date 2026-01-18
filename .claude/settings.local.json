@@ -1,23 +1,26 @@
 {
   "permissions": {
     "allow": [
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(gh:*)",
+      "Bash(winget install:*)",
+      "Bash(cmd.exe /c \"where gh\")",
+      "Bash(git config:*)",
       "Bash(npm install:*)",
-      "Bash(cat:*)",
-      "Bash(curl:*)",
-      "Bash(bash:*)",
-      "Bash(git --version:*)",
-      "Bash(git worktree:*)",
-      "Bash(tmux:*)",
-      "Bash(wsl --status)",
-      "Bash(wsl -d Ubuntu-24.04 -- bash -c \"sudo apt update && sudo apt install -y tmux\")",
-      "Bash(wsl:*)",
-      "Bash(npm run dev:*)",
-      "Bash(npx prisma validate:*)",
-      "Bash(npx prisma migrate:*)",
-      "Bash(docker:*)",
-      "Bash(where psql:*)",
-      "Bash(npx tsc:*)",
-      "Bash(npx tsx:*)"
+      "Bash(cmd.exe /c \"where node\")",
+      "Bash(cmd.exe /c \"where npm\")",
+      "Bash(\"/c/Program Files/nodejs/node.exe\" --version)",
+      "Bash(\"/c/Program Files (x86)/nodejs/node.exe\" --version)",
+      "Bash(\"/c/Program Files/nodejs/npm.cmd\" --version)",
+      "Bash(\"/c/Program Files/nodejs/npm.cmd\" install git+https://github.com/RenTonoduka/AIT42.git)",
+      "Bash(rm:*)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\")",
+      "Bash(bash:*)"
     ]
   }
 }

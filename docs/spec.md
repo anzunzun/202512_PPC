@@ -1,175 +1,123 @@
-# 【3】仕様書（UI / API / DB / 実装）
+# 仕様書（UI / API / DB）
 
-> ※ 実装者・AIエージェント用
-> ※ 技術前提：Next.js(App Router) / TypeScript / Prisma / PostgreSQL / GCP
+用途：実装・差し替え・量産
+配置：docs/spec.md
 
----
+## 0. 技術スタック
 
-## 技術前提（変更可否）
+| 領域 | 技術 | バージョン |
+|------|------|-----------|
+| フロントエンド | Next.js (App Router) | 14.x |
+| 言語 | TypeScript | 5.x |
+| スタイル | Tailwind CSS | 3.x |
+| データベース | PostgreSQL | 15+ |
+| ORM | Prisma | 5.x |
+| AI/自動化 | AIT42 | 2.x |
 
-| レイヤー | 技術 | 変更可否 |
-|----------|------|----------|
-| フロントエンド | Next.js（App Router） | 変更不可 |
-| バックエンド | Next.js API / Server Actions | 変更不可 |
-| DB | PostgreSQL + Prisma | 変更不可 |
-| インフラ | Google Cloud | 変更不可 |
-| LLM | Claude Code（分析・生成補助のみ） | - |
-
----
-
-## 全体アーキテクチャ
+### ディレクトリ構造
 
 ```
-[ User ]
-   ↓
-[ Admin UI ]
-   ↓
-[ Research Orchestrator ]
-   ├─ PPC Data Collector
-   ├─ LP Structure Analyzer
-   ├─ Keyword Analyzer
-   ├─ Rule Engine
-   └─ Claude Code (要約のみ)
-        ↓
-[ Core Data (PostgreSQL) ]
-        ↓
-[ Judgment Result ]
+.claude/
+  └── claude.md          # 憲法（最上位ルール）
+docs/
+  ├── requirements.md    # 要件定義書
+  └── spec.md            # 仕様書（本ファイル）
+app/
+  ├── layout.tsx         # 共通レイアウト
+  ├── page.tsx           # G-01: トップ
+  ├── quiz/page.tsx      # Q-01: 診断
+  ├── category/page.tsx  # C-01: 条件別
+  ├── compare/page.tsx   # CP-01: 比較
+  ├── result/[type]/     # R-01: 結果
+  └── legal/page.tsx     # L-01: Legal
+prisma/
+  └── schema.prisma      # DBスキーマ
+lib/
+  └── prisma.ts          # Prismaクライアント
 ```
 
----
+## 1. サイト構造
 
-## UI仕様（最小）
-
-| 画面 | 機能 |
-|------|------|
-| リサーチ一覧画面 | プロジェクト一覧表示 |
-| スコア閲覧画面 | スコア詳細の閲覧 |
-| 採否承認画面 | 承認 or 却下の操作 |
-
-**※ 編集・調整UIは存在しない**
-
----
-
-## API / Server Actions
-
-### `runResearchProjectAction`
-
-**Input**
-```typescript
-{
-  projectId: string
-}
+```
+/category/条件別
+/compare/比較テーマ
+/quiz/診断
+/legal/
 ```
 
-**Output**
-```typescript
-{
-  status: "completed",
-  scores: RiskScore
-}
-```
+※ URL / slug に商標を含めない
 
-**責務**
-1. データ収集
-2. スコア算出
-3. DB保存
+## 2. 画面一覧
 
----
+| ID | 画面 | 役割 |
+|----|------|------|
+| G-01 | トップ | 思想提示 |
+| C-01 | 条件別 | 悩み起点 |
+| Q-01 | 診断 | 主導線 |
+| R-01 | 結果 | Type表示 |
+| CP-01 | 比較 | 深掘り |
+| L-01 | Legal | 信頼 |
 
-## 中核データ構造（Prisma概念）
+## 3. 診断ロジック仕様
 
-### ResearchProject
+- 質問数：5〜7
+- 方式：Yes/No + スコア
+- 出力：Type A / B / C
+
+表示順（固定）：
+1. 理由
+2. 条件
+3. 注意点
+4. CTA
+
+## 4. CTA仕様
+
+### 許可
+
+- 条件に合う公式サイトを確認
+- 詳細条件を公式ページで見る
+
+### 禁止
+
+- 商品名
+- ブランド名
+- 最安・おすすめ
+
+## 5. 画像仕様
+
+- WebP形式
+- lazy load
+- alt必須（条件説明のみ）
+- ロゴ・公式画像禁止
+
+## 6. DB仕様（Prisma想定）
+
 ```prisma
-model ResearchProject {
-  id        String   @id @default(uuid())
-  country   String
-  genre     String
-  status    String   // pending | completed | rejected
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+a8_offer {
+  offer_id: string
+  category: string
+  reward_range: string
+  approval_rate: string
+  google_ads_allowed: boolean
+  trademark_required: false
+  comparison_allowed: boolean
+  cons_allowed: boolean
+  lp_direct_required: boolean
+  score: number
+  status: "candidate" | "approved" | "rejected"
 }
 ```
 
-### CompetitorSite
-```prisma
-model CompetitorSite {
-  id                   String @id @default(uuid())
-  domain               String
-  lpStructureType      String
-  brandDependencyScore Float
-  projectId            String
-}
-```
+※ 商標情報は存在しない
 
-### RiskScore
-```prisma
-model RiskScore {
-  id             String @id @default(uuid())
-  trademarkRisk  Float  // 商標リスク
-  adPolicyRisk   Float  // 広告ポリシーリスク
-  bridgePageRisk Float  // ブリッジページリスク
-  totalScore     Float  // 総合スコア
-  projectId      String @unique
-}
-```
+## 7. 差し替え仕様
 
----
+- LP構造：変更不可
+- コピー：変更不可
+- 変更点：affiliate_link のみ
 
-## データフロー（判断の所在明示）
+## 最終確認
 
-```
-Raw Data
-  ↓
-Rule Engine
-  ↓
-Score Data（正解）
-  ↓
-UI / Report（非正解）
-```
-
----
-
-## エラーハンドリング
-
-| 状況 | 処理 |
-|------|------|
-| データ不足 | 判定不可 |
-| スコア未算出 | rejected |
-| 例外 | 即失敗（例外処理なし） |
-
----
-
-## 成果物の正解定義
-
-> **正解はDB内スコアのみ**
-> UI・文章・テンプレは正解を持たない。
-
----
-
-## 自己検証（必須）
-
-| 検証項目 | 許容 |
-|----------|------|
-| 解釈の余地 | NO |
-| 人間が直したくなる | NO |
-| 実装者判断 | NO |
-| 再実行差分 | NO |
-
-すべて **NO** を満たすこと。
-
----
-
-## 最終宣言
-
-この仕様は
-**PPCアフィリエイトで「勝つ」ための設計ではない。**
-
-> 「生き残る世界」と「踏み込んではいけない世界」を
-> 人間の善意ごと切り分けるための、**意思決定憲法**である。
-
----
-
-## 参照ドキュメント
-
-- 憲法: `.claude/claude.md`
-- 要件定義書: `docs/requirements.md`
+- [ ] 商標がなくても成立しているか
+- [ ] 広告文とLPは完全一致しているか
+- [ ] 案件差し替えが1項目で完結するか

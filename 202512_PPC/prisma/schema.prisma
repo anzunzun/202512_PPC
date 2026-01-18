@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ResearchProject {
+  id        String   @id @default(uuid())
+  country   String
+  genre     String
+  status    String   // pending | completed | rejected
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  competitorSites CompetitorSite[]
+  riskScore       RiskScore?
+  items           ResearchItem[]
+
+  @@index([status])
+}
+
+model CompetitorSite {
+  id                   String   @id @default(uuid())
+  domain               String
+  lpStructureType      String
+  brandDependencyScore Float
+  projectId            String
+
+  project ResearchProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
+
+model RiskScore {
+  id             String  @id @default(uuid())
+  trademarkRisk  Float
+  adPolicyRisk   Float
+  bridgePageRisk Float
+  totalScore     Float
+  projectId      String  @unique
+
+  project ResearchProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+enum ResearchItemType {
+  text
+  url
+  number
+  money
+  note
+}
+
+model ResearchItem {
+  id        String           @id @default(uuid())
+  projectId String
+  project   ResearchProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  label     String
+  value     String           @db.Text @default("")
+  type      ResearchItemType @default(text)
+  order     Int              @default(0)
+
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([projectId, order])
+}
