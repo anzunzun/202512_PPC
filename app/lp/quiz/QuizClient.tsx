@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { CONFIG, getResultType, type Question, type ResultType } from "./config";
+import { CONFIG, getResultType, type ResultType } from "../config";
 
 const styles: Record<string, React.CSSProperties> = {
   card: {
@@ -57,7 +57,6 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#667eea",
     color: "#fff",
   },
-  // 結果画面
   resultTitle: {
     fontSize: 14,
     color: "#667eea",
@@ -142,7 +141,7 @@ const styles: Record<string, React.CSSProperties> = {
 
 type Phase = "quiz" | "result";
 
-export default function LpClient() {
+export default function QuizClient() {
   const [phase, setPhase] = useState<Phase>("quiz");
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -151,16 +150,13 @@ export default function LpClient() {
   const totalQuestions = questions.length;
   const currentQuestion = questions[step];
 
-  // スコア計算
   const totalScore = useMemo(() => {
     return Object.values(answers).reduce((sum, v) => sum + v, 0);
   }, [answers]);
 
-  // 結果タイプ
   const resultTypeKey = useMemo(() => getResultType(totalScore), [totalScore]);
   const result: ResultType = CONFIG.results[resultTypeKey];
 
-  // 回答処理
   const handleAnswer = (value: number) => {
     const newAnswers = { ...answers, [currentQuestion.id]: value };
     setAnswers(newAnswers);
@@ -172,14 +168,12 @@ export default function LpClient() {
     }
   };
 
-  // やり直し
   const handleRestart = () => {
     setPhase("quiz");
     setStep(0);
     setAnswers({});
   };
 
-  // 診断画面
   if (phase === "quiz") {
     const progress = ((step + 1) / totalQuestions) * 100;
 
@@ -211,7 +205,6 @@ export default function LpClient() {
     );
   }
 
-  // 結果画面
   return (
     <div style={styles.card}>
       <div style={styles.resultTitle}>あなたの診断結果</div>
