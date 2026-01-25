@@ -98,8 +98,9 @@ export async function scrapeUrl(
 
 /**
  * HTMLをパースしてScrapedDataを生成
+ * @internal テスト用にエクスポート
  */
-function parseHtml(url: string, html: string): ScrapedData {
+export function parseHtml(url: string, html: string): ScrapedData {
   const title = pickTag(html, "title", 200);
   const h1 = pickTag(html, "h1", 200);
   const metaDescription = pickMeta(html, "description", 300);
