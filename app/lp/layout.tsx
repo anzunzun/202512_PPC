@@ -13,7 +13,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 0,
   },
   container: {
-    maxWidth: 600,
+    maxWidth: 860,
     margin: "0 auto",
     padding: "20px 16px",
   },
