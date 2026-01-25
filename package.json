@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "predev": "bash scripts/checkShellLeak.sh"
   },
   "dependencies": {
@@ -19,10 +22,13 @@
     "zod": "^4.3.5"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "jest": "^30.2.0",
     "prisma": "^5.0.0",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.0.0"
   }
 }
