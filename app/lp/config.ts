@@ -46,7 +46,7 @@ export const CONFIG = {
         "サポート対応が限定的な場合がある",
         "高度な機能は別料金の可能性",
       ],
-      ctaUrl: "https://example.com/affiliate-a",
+      ctaUrl: "https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75",
       ctaText: "条件に合うサービスを確認する",
     },
     "type-b": {
@@ -62,7 +62,7 @@ export const CONFIG = {
         "月額費用は高めになる傾向",
         "機能が多すぎて使いこなせない可能性",
       ],
-      ctaUrl: "https://example.com/affiliate-b",
+      ctaUrl: "https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75",
       ctaText: "条件に合うサービスを確認する",
     },
     "type-c": {
@@ -78,15 +78,15 @@ export const CONFIG = {
         "特化した強みは少ない場合がある",
         "将来的に物足りなくなる可能性",
       ],
-      ctaUrl: "https://example.com/affiliate-c",
+      ctaUrl: "https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75",
       ctaText: "条件に合うサービスを確認する",
     },
   } as Record<string, ResultType>,
 
   // 法的情報
   legal: {
-    operator: "運営者名を入力",
-    email: "contact@example.com",
+    operator: "加藤梓",
+    email: "g4space@ymail.ne.jp",
     disclaimer:
       "当サイトは情報提供を目的としており、特定のサービスを推奨するものではありません。最終的な判断はご自身の責任でお願いいたします。",
   },
