@@ -11,6 +11,7 @@ import {
   calcBridgePageRiskScore,
   calcTotalRiskScore,
 } from "@/lib/research/rules";
+import { suggestKeywords, groupKeywordsByCategory } from "@/lib/research/keywordSuggester";
 import { prisma } from "@/lib/prisma";
 
 export const ppcProvider: ResearchProvider = {
@@ -33,10 +34,29 @@ export const ppcProvider: ResearchProvider = {
     // 3. リスクスコア算出
     const scores = calculateScores(scraped, referenceUrl);
 
-    // 4. targetKw生成（既存があれば上書きしない）
-    const targetKw = existingTargetKw || generateTargetKw(scraped);
+    // 4. キーワード提案を生成
+    const keywordSuggestion = scraped ? suggestKeywords(scraped) : null;
+    const groupedKeywords = keywordSuggestion
+      ? groupKeywordsByCategory([
+          ...keywordSuggestion.mainKeywords,
+          ...keywordSuggestion.longTailKeywords,
+        ])
+      : null;
 
-    // 5. 結果組み立て
+    // 5. targetKw生成（既存があれば上書きしない、なければ提案KWの上位を使用）
+    let targetKw = existingTargetKw;
+    if (!targetKw && keywordSuggestion && keywordSuggestion.mainKeywords.length > 0) {
+      // 購入意図の高いKWを優先
+      targetKw = keywordSuggestion.mainKeywords
+        .slice(0, 3)
+        .map((k) => k.keyword)
+        .join(", ");
+    }
+    if (!targetKw) {
+      targetKw = generateTargetKw(scraped);
+    }
+
+    // 6. 結果組み立て
     const kv: Record<string, string> = {
       referenceUrl: referenceUrl || "",
       targetKw,
@@ -50,7 +70,18 @@ export const ppcProvider: ResearchProvider = {
       bridgePageRisk: String(scores.bridgePageRisk),
     };
 
-    // キーワード（カンマ区切り）
+    // キーワード提案をJSON形式で保存
+    if (keywordSuggestion) {
+      kv.suggestedKeywords = JSON.stringify({
+        summary: keywordSuggestion.summary,
+        mainKeywords: keywordSuggestion.mainKeywords,
+        longTailKeywords: keywordSuggestion.longTailKeywords,
+        negativeKeywords: keywordSuggestion.negativeKeywords,
+        grouped: groupedKeywords,
+      });
+    }
+
+    // 抽出キーワード（カンマ区切り）
     if (scraped?.keywords && scraped.keywords.length > 0) {
       kv.extractedKeywords = scraped.keywords.join(", ");
     }
@@ -62,6 +93,7 @@ export const ppcProvider: ResearchProvider = {
         scrapedUrl: scraped?.url || null,
         fetchError: scraped?.fetchError || null,
         usedExistingTargetKw: Boolean(existingTargetKw),
+        keywordSuggestion: keywordSuggestion || null,
       },
     };
   },

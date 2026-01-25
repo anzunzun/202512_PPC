@@ -4,13 +4,13 @@
  */
 
 // 商標カテゴリ
-type TrademarkCategory = {
+export type TrademarkCategory = {
   name: string;
   weight: number; // 重み (1-10)
   trademarks: string[];
 };
 
-const TRADEMARK_CATEGORIES: TrademarkCategory[] = [
+export const TRADEMARK_CATEGORIES: TrademarkCategory[] = [
   {
     name: "テック大手",
     weight: 10,

@@ -10,9 +10,25 @@ import {
 } from "@/app/actions/runToItems";
 import { isEmptyLike, normalizeEmptyLike } from "@/lib/emptyLike";
 
+// Inline type to avoid client/server module import issues
+type SuggestedKeyword = {
+  keyword: string;
+  category: "purchase" | "compare" | "info" | "problem";
+  score: number;
+  reason: string;
+};
+
 type UiRow = PreviewRow & {
   selectableNow: boolean;
   lockReasonNow?: string;
+};
+
+type KeywordSuggestionData = {
+  summary: string;
+  mainKeywords: SuggestedKeyword[];
+  longTailKeywords: SuggestedKeyword[];
+  negativeKeywords: string[];
+  grouped?: Record<string, SuggestedKeyword[]>;
 };
 
 export default function ApplyClient({
@@ -340,6 +356,191 @@ export default function ApplyClient({
           );
         })}
       </div>
+
+      {/* キーワード提案セクション */}
+      <KeywordSuggestionSection raw={raw} />
+    </div>
+  );
+}
+
+/**
+ * キーワード提案表示コンポーネント
+ */
+function KeywordSuggestionSection({ raw }: { raw: any }) {
+  const suggestion = useMemo((): KeywordSuggestionData | null => {
+    try {
+      // resultJson.itemsByKey に保存されている
+      const itemsByKey = raw?.resultJson?.itemsByKey;
+      if (!itemsByKey?.suggestedKeywords) return null;
+      return JSON.parse(itemsByKey.suggestedKeywords);
+    } catch {
+      return null;
+    }
+  }, [raw]);
+
+  if (!suggestion) return null;
+
+  const categoryLabels: Record<string, { label: string; color: string; description: string }> = {
+    purchase: { label: "購入意図", color: "#22c55e", description: "CV率が高い、購入直前のユーザー向け" },
+    compare: { label: "比較検討", color: "#3b82f6", description: "情報収集段階、比較を求めるユーザー向け" },
+    info: { label: "情報収集", color: "#8b5cf6", description: "認知拡大、初期段階のユーザー向け" },
+    problem: { label: "課題解決", color: "#f59e0b", description: "特定の悩みを持つユーザー向け" },
+  };
+
+  const grouped = suggestion.grouped || {};
+
+  return (
+    <div style={{ marginTop: 24, padding: 20, border: "1px solid #ddd", borderRadius: 12, background: "#fafafa" }}>
+      <div style={{ marginBottom: 16 }}>
+        <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, display: "flex", alignItems: "center", gap: 8 }}>
+          キーワード提案
+          <span style={{ fontSize: 12, fontWeight: 400, opacity: 0.7 }}>（サイト内容から自動生成・商標なし）</span>
+        </h3>
+        <p style={{ margin: "8px 0 0", fontSize: 13, opacity: 0.8 }}>{suggestion.summary}</p>
+      </div>
+
+      {/* カテゴリ別キーワード */}
+      <div style={{ display: "grid", gap: 16 }}>
+        {Object.entries(categoryLabels).map(([cat, info]) => {
+          const keywords = grouped[cat] || [];
+          if (keywords.length === 0) return null;
+
+          return (
+            <div key={cat} style={{ background: "#fff", borderRadius: 8, padding: 16, border: "1px solid #eee" }}>
+              <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    padding: "4px 10px",
+                    borderRadius: 4,
+                    background: info.color,
+                    color: "#fff",
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  {info.label}
+                </span>
+                <span style={{ fontSize: 12, opacity: 0.7 }}>{info.description}</span>
+              </div>
+
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {keywords.map((kw, idx) => (
+                  <KeywordChip key={idx} keyword={kw} color={info.color} />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 除外キーワード（商標） */}
+      {suggestion.negativeKeywords && suggestion.negativeKeywords.length > 0 && (
+        <div style={{ marginTop: 16, padding: 16, background: "#fef2f2", borderRadius: 8, border: "1px solid #fecaca" }}>
+          <div style={{ marginBottom: 8, fontWeight: 700, color: "#991b1b", fontSize: 14 }}>
+            除外推奨キーワード（商標・ブランド名）
+          </div>
+          <div style={{ fontSize: 13, opacity: 0.9 }}>
+            以下のキーワードは商標を含むため、広告配信では除外してください：
+          </div>
+          <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {suggestion.negativeKeywords.map((kw, idx) => (
+              <span
+                key={idx}
+                style={{
+                  display: "inline-block",
+                  padding: "4px 10px",
+                  borderRadius: 4,
+                  background: "#fee2e2",
+                  color: "#991b1b",
+                  fontSize: 12,
+                  textDecoration: "line-through",
+                }}
+              >
+                {kw}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 活用ガイド */}
+      <div style={{ marginTop: 16, padding: 12, background: "#eff6ff", borderRadius: 8, border: "1px solid #bfdbfe" }}>
+        <div style={{ fontWeight: 700, color: "#1e40af", fontSize: 13, marginBottom: 8 }}>活用ガイド</div>
+        <ul style={{ margin: 0, paddingLeft: 20, fontSize: 12, color: "#1e40af", lineHeight: 1.8 }}>
+          <li>「購入意図」のKWをGoogle広告のメインキーワードに設定</li>
+          <li>「比較検討」「課題解決」のKWを広告グループの拡張用に使用</li>
+          <li>スコアが高いほどCV期待度が高い（目安）</li>
+          <li>除外キーワードは広告の除外設定に追加推奨</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * キーワードチップ表示
+ */
+function KeywordChip({ keyword, color }: { keyword: SuggestedKeyword; color: string }) {
+  const [showDetail, setShowDetail] = useState(false);
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        onClick={() => setShowDetail(!showDetail)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "6px 12px",
+          borderRadius: 6,
+          background: "#f3f4f6",
+          border: "1px solid #e5e7eb",
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: 500,
+        }}
+      >
+        <span>{keyword.keyword}</span>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 24,
+            height: 18,
+            borderRadius: 4,
+            background: color,
+            color: "#fff",
+            fontSize: 10,
+            fontWeight: 700,
+          }}
+        >
+          {keyword.score}
+        </span>
+      </button>
+
+      {showDetail && (
+        <div
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            marginTop: 4,
+            padding: 10,
+            background: "#fff",
+            borderRadius: 6,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            zIndex: 10,
+            minWidth: 200,
+            fontSize: 12,
+          }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>{keyword.keyword}</div>
+          <div style={{ opacity: 0.8 }}>{keyword.reason}</div>
+          <div style={{ marginTop: 6, opacity: 0.6 }}>スコア: {keyword.score}/100</div>
+        </div>
+      )}
     </div>
   );
 }
