@@ -11,6 +11,7 @@ export type Question = {
 export type ProductType = {
   id: string;
   name: string;
+  image: string;
   description: string;
   price: string;
   priceNote: string;
@@ -40,6 +41,7 @@ export const CONFIG = {
     {
       id: "product-a",
       name: "スタンダードライン",
+      image: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&h=300&fit=crop",
       description: "日常使いに適した、傷つきにくく黒ずまない素材を使用。シンプルなデザインで飽きが来ません。",
       price: "8,800円〜",
       priceNote: "ペア価格（税込）",
@@ -61,6 +63,7 @@ export const CONFIG = {
     {
       id: "product-b",
       name: "プレミアムライン",
+      image: "https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&h=300&fit=crop",
       description: "特別な日の贈り物に適した上質な素材を使用。高級感のあるデザインと耐久性を両立。",
       price: "15,800円〜",
       priceNote: "ペア価格（税込）",
@@ -82,6 +85,7 @@ export const CONFIG = {
     {
       id: "product-c",
       name: "レザーコンビライン",
+      image: "https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=400&h=300&fit=crop",
       description: "金属とレザーを組み合わせた個性的なデザイン。カジュアルなスタイルに合わせやすい。",
       price: "6,800円〜",
       priceNote: "ペア価格（税込）",

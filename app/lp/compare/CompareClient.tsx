@@ -113,6 +113,15 @@ function ProductCard({ product, index }: { product: ProductType; index: number }
 
   return (
     <div style={styles.productCard}>
+      {/* 商品画像 */}
+      <div style={styles.imageContainer}>
+        <img
+          src={product.image}
+          alt={`${product.name}のイメージ`}
+          style={styles.productImage}
+        />
+      </div>
+
       {/* カードヘッダー */}
       <div style={styles.cardHeader}>
         <span style={{ ...styles.cardLabel, background: labelColor }}>
@@ -268,6 +277,18 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 20,
     boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
     border: "1px solid #eee",
+  },
+  imageContainer: {
+    marginBottom: 16,
+    borderRadius: 8,
+    overflow: "hidden",
+    background: "#f8f9fa",
+  },
+  productImage: {
+    width: "100%",
+    height: 200,
+    objectFit: "cover",
+    display: "block",
   },
   cardHeader: {
     marginBottom: 16,
