@@ -39,8 +39,8 @@
 .lp-specs .sl{color:#888;width:35%}
 
 /* CTAボタン */
-.lp-cta{display:block;width:100%;padding:16px;font-size:16px;font-weight:800;background:#32373c;color:#fff !important;border:none;border-radius:14px;text-align:center;text-decoration:none !important;min-height:56px;line-height:24px;cursor:pointer;transition:opacity .2s}
-.lp-cta:active{opacity:.8}
+.lp-cta{display:block;width:100%;padding:18px 16px;font-size:17px;font-weight:800;background:linear-gradient(135deg,#ff6b6b 0%,#ee5a24 100%);color:#fff !important;border:none;border-radius:14px;text-align:center;text-decoration:none !important;min-height:60px;line-height:24px;cursor:pointer;transition:all .2s;box-shadow:0 4px 15px rgba(238,90,36,.4)}
+.lp-cta:active{transform:scale(.98);box-shadow:0 2px 8px rgba(238,90,36,.3)}
 .lp-cta-note{font-size:10px;color:#aaa;text-align:center;margin-top:6px}
 
 /* 選び方ガイド */
@@ -59,8 +59,10 @@
 .lp-privacy p{font-size:12px;color:#666;line-height:1.7;margin:0 0 6px}
 
 /* フローティングCTA */
-.lp-float{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);padding:10px 16px;box-shadow:0 -2px 12px rgba(0,0,0,.1);z-index:9999}
-.lp-float a{display:block;max-width:480px;margin:0 auto;padding:14px;font-size:15px;font-weight:800;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff !important;border:none;border-radius:12px;text-align:center;text-decoration:none !important;min-height:48px}
+@keyframes pulse{0%,100%{box-shadow:0 4px 20px rgba(238,90,36,.5)}50%{box-shadow:0 4px 30px rgba(238,90,36,.8),0 0 40px rgba(238,90,36,.4)}}
+.lp-float{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.98);backdrop-filter:blur(8px);padding:12px 16px;box-shadow:0 -4px 20px rgba(0,0,0,.15);z-index:9999}
+.lp-float a{display:flex;align-items:center;justify-content:center;gap:8px;max-width:480px;margin:0 auto;padding:16px;font-size:18px;font-weight:800;background:linear-gradient(135deg,#ff6b6b 0%,#ee5a24 100%);color:#fff !important;border:none;border-radius:14px;text-align:center;text-decoration:none !important;min-height:56px;box-shadow:0 4px 20px rgba(238,90,36,.5);animation:pulse 2s infinite}
+.lp-float a:active{transform:scale(.98);animation:none}
 
 /* フッター */
 .lp-footer{text-align:center;padding:20px 0 80px;font-size:11px;color:#999;line-height:1.8}
@@ -108,7 +110,7 @@
         <tr><td class="sl">納期</td><td>約1週間</td></tr>
       </table>
     </div>
-    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">購入はこちら</a>
+    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">▶ 購入はこちら</a>
     <p class="lp-cta-note">※ 公式サイトへ移動します</p>
   </div>
 </div>
@@ -139,7 +141,7 @@
         <tr><td class="sl">納期</td><td>約1〜2週間</td></tr>
       </table>
     </div>
-    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">購入はこちら</a>
+    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">▶ 購入はこちら</a>
     <p class="lp-cta-note">※ 公式サイトへ移動します</p>
   </div>
 </div>
@@ -170,7 +172,7 @@
         <tr><td class="sl">納期</td><td>約5日</td></tr>
       </table>
     </div>
-    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">購入はこちら</a>
+    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">▶ 購入はこちら</a>
     <p class="lp-cta-note">※ 公式サイトへ移動します</p>
   </div>
 </div>
@@ -221,5 +223,5 @@
 
 <!-- フローティングCTA -->
 <div class="lp-float">
-  <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored">購入はこちら</a>
+  <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored">▶ 今すぐ購入する</a>
 </div>
