@@ -1,0 +1,236 @@
+<!-- WordPress用 比較ページ（メインLP） -->
+<!-- カスタムHTMLブロックに貼り付けてください -->
+
+<style>
+.lp-wrap{max-width:800px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+.lp-pr{text-align:center;font-size:11px;color:#999;margin-bottom:12px}
+.lp-header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:12px;padding:24px 20px;margin-bottom:20px;text-align:center;color:#fff}
+.lp-header h1{font-size:24px;font-weight:700;margin:0 0 8px}
+.lp-header p{font-size:14px;opacity:.9;margin:0}
+.lp-card{background:#fff;border-radius:12px;padding:24px 20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.lp-card h2{font-size:22px;font-weight:700;color:#333;margin:0 0 8px;text-align:center}
+.lp-card .sub{font-size:14px;color:#666;margin:0;line-height:1.6;text-align:center}
+.lp-section-title{font-size:18px;font-weight:700;color:#333;margin:0 0 16px;padding-bottom:12px;border-bottom:2px solid #333;display:flex;align-items:center;gap:8px}
+.lp-table-wrap{overflow-x:auto}
+.lp-table{width:100%;border-collapse:collapse;font-size:14px;min-width:500px}
+.lp-table th{padding:12px 10px;background:#32373c;color:#fff;font-weight:600;text-align:center;border-bottom:1px solid #ddd}
+.lp-table td{padding:12px 10px;border-bottom:1px solid #eee;text-align:center}
+.lp-table .td-label{font-weight:600;background:#f0f0f0;text-align:left}
+.lp-table .td-price{font-weight:700;color:#e74c3c}
+.lp-table tr:nth-child(even){background:#f8f9fa}
+.lp-product{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #eee}
+.lp-product img{width:100%;height:200px;object-fit:cover;display:block;border-radius:8px;margin-bottom:16px;background:#f8f9fa}
+.lp-product .label{display:inline-block;padding:6px 16px;border-radius:20px;color:#fff;font-weight:700;font-size:14px;margin-bottom:16px}
+.lp-product .price{font-size:28px;font-weight:700;color:#e74c3c}
+.lp-product .price-note{font-size:12px;color:#888;margin-left:8px}
+.lp-product .price-block{margin-bottom:16px;padding-bottom:16px;border-bottom:1px dashed #ddd}
+.lp-product .desc{font-size:14px;color:#555;line-height:1.8;margin-bottom:20px}
+.lp-product .feat-title{font-size:13px;font-weight:700;color:#333;margin-bottom:10px;padding-left:8px;border-left:3px solid #3498db}
+.lp-product .feat-list{list-style:none;padding:0;margin:0 0 20px;display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.lp-product .feat-list li{font-size:13px;color:#444;padding:6px 0;display:flex;align-items:center;gap:6px}
+.lp-product .feat-list .check{color:#27ae60;font-weight:700}
+.lp-product .specs{margin-bottom:20px;background:#f8f9fa;border-radius:8px;padding:16px}
+.lp-product .specs-title{font-size:13px;font-weight:700;color:#333;margin-bottom:10px}
+.lp-product .specs table{width:100%;font-size:13px;border-collapse:collapse}
+.lp-product .specs td{padding:8px 0;border-bottom:1px solid #eee}
+.lp-product .specs .s-label{color:#666;width:30%}
+.lp-product .specs .s-value{color:#333}
+.lp-cta{display:block;width:100%;padding:16px 24px;font-size:15px;font-weight:700;background:#32373c;color:#fff !important;border:none;border-radius:9999px;cursor:pointer;text-align:center;text-decoration:none !important;box-sizing:border-box;transition:background .2s}
+.lp-cta:hover{background:#1a1d20}
+.lp-cta-note{font-size:11px;color:#888;text-align:center;margin-top:8px}
+.lp-guide{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.lp-guide h3{font-size:16px;font-weight:700;color:#333;margin-bottom:16px;text-align:center}
+.lp-guide-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.lp-guide-item{text-align:center;padding:12px}
+.lp-guide-item .icon{font-size:28px;margin-bottom:8px}
+.lp-guide-item .label{font-size:14px;font-weight:700;color:#333;margin-bottom:4px}
+.lp-guide-item .text{font-size:12px;color:#666;line-height:1.5}
+.lp-footer{text-align:center;padding:24px 16px;font-size:12px;color:#888;line-height:1.8}
+.lp-footer a{color:#667eea}
+@media(max-width:600px){
+  .lp-product .feat-list{grid-template-columns:1fr}
+  .lp-guide-grid{grid-template-columns:1fr}
+}
+</style>
+
+<div class="lp-wrap">
+
+<!-- PR表記 -->
+<div class="lp-pr">当ページはアフィリエイト広告を利用しています</div>
+
+<!-- ヘッダー -->
+<div class="lp-header">
+  <h1>ペアアクセサリー診断</h1>
+  <p>条件別で選ぶ</p>
+</div>
+
+<!-- ページタイトル -->
+<div class="lp-card">
+  <h2>ペアアクセサリーを条件で比較</h2>
+  <p class="sub">素材・価格・スタイルなど、条件別に比較して自分に合ったものを見つけましょう。</p>
+</div>
+
+<!-- 比較表 -->
+<div class="lp-card">
+  <div class="lp-section-title">&#x1F4CA; 条件別 比較表</div>
+  <div class="lp-table-wrap">
+    <table class="lp-table">
+      <thead>
+        <tr>
+          <th>比較項目</th>
+          <th>スタンダードライン</th>
+          <th>プレミアムライン</th>
+          <th>レザーコンビライン</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="td-label">価格帯</td>
+          <td class="td-price">8,800円〜</td>
+          <td class="td-price">15,800円〜</td>
+          <td class="td-price">6,800円〜</td>
+        </tr>
+        <tr>
+          <td class="td-label">主な素材</td>
+          <td>サージカルステンレス</td>
+          <td>タングステン/チタン</td>
+          <td>本革+ステンレス</td>
+        </tr>
+        <tr>
+          <td class="td-label">耐久性</td>
+          <td>高い</td>
+          <td>非常に高い</td>
+          <td>中程度</td>
+        </tr>
+        <tr>
+          <td class="td-label">スタイル</td>
+          <td>シンプル</td>
+          <td>上品・高級感</td>
+          <td>カジュアル</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 各ラインの詳細 -->
+<div class="lp-section-title" style="padding:0 0 12px;margin:0 0 20px;border-bottom:2px solid #333">&#x1F48D; 各ラインの詳細</div>
+
+<!-- 商品A: スタンダードライン -->
+<div class="lp-product">
+  <img src="https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&h=300&fit=crop" alt="スタンダードラインのイメージ">
+  <div><span class="label" style="background:#3498db">スタンダードライン</span></div>
+  <div class="price-block">
+    <span class="price">8,800円〜</span>
+    <span class="price-note">ペア価格（税込）</span>
+  </div>
+  <p class="desc">日常使いに適した、傷つきにくく黒ずまない素材を使用。シンプルなデザインで飽きが来ません。</p>
+  <div class="feat-title">特徴</div>
+  <ul class="feat-list">
+    <li><span class="check">&#x2713;</span>サージカルステンレス製</li>
+    <li><span class="check">&#x2713;</span>金属アレルギー対応</li>
+    <li><span class="check">&#x2713;</span>シンプルデザイン</li>
+    <li><span class="check">&#x2713;</span>刻印サービスあり</li>
+  </ul>
+  <div class="specs">
+    <div class="specs-title">スペック詳細</div>
+    <table>
+      <tr><td class="s-label">素材</td><td class="s-value">サージカルステンレス316L</td></tr>
+      <tr><td class="s-label">カラー</td><td class="s-value">シルバー / ブラック / ピンクゴールド</td></tr>
+      <tr><td class="s-label">サイズ展開</td><td class="s-value">5種類</td></tr>
+      <tr><td class="s-label">納期</td><td class="s-value">約1週間</td></tr>
+    </table>
+  </div>
+  <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">&#x226B; 詳細を公式サイトで確認</a>
+  <p class="lp-cta-note">※ 公式サイトへ移動します</p>
+</div>
+
+<!-- 商品B: プレミアムライン -->
+<div class="lp-product">
+  <img src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&h=300&fit=crop" alt="プレミアムラインのイメージ">
+  <div><span class="label" style="background:#9b59b6">プレミアムライン</span></div>
+  <div class="price-block">
+    <span class="price">15,800円〜</span>
+    <span class="price-note">ペア価格（税込）</span>
+  </div>
+  <p class="desc">特別な日の贈り物に適した上質な素材を使用。高級感のあるデザインと耐久性を両立。</p>
+  <div class="feat-title">特徴</div>
+  <ul class="feat-list">
+    <li><span class="check">&#x2713;</span>タングステン / チタン製</li>
+    <li><span class="check">&#x2713;</span>傷がつきにくい高硬度</li>
+    <li><span class="check">&#x2713;</span>上品な光沢</li>
+    <li><span class="check">&#x2713;</span>ギフトボックス付き</li>
+  </ul>
+  <div class="specs">
+    <div class="specs-title">スペック詳細</div>
+    <table>
+      <tr><td class="s-label">素材</td><td class="s-value">タングステン / チタン</td></tr>
+      <tr><td class="s-label">カラー</td><td class="s-value">シルバー / ブラック</td></tr>
+      <tr><td class="s-label">サイズ展開</td><td class="s-value">7種類</td></tr>
+      <tr><td class="s-label">納期</td><td class="s-value">約1〜2週間</td></tr>
+    </table>
+  </div>
+  <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">&#x226B; 詳細を公式サイトで確認</a>
+  <p class="lp-cta-note">※ 公式サイトへ移動します</p>
+</div>
+
+<!-- 商品C: レザーコンビライン -->
+<div class="lp-product">
+  <img src="https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=400&h=300&fit=crop" alt="レザーコンビラインのイメージ">
+  <div><span class="label" style="background:#27ae60">レザーコンビライン</span></div>
+  <div class="price-block">
+    <span class="price">6,800円〜</span>
+    <span class="price-note">ペア価格（税込）</span>
+  </div>
+  <p class="desc">金属とレザーを組み合わせた個性的なデザイン。カジュアルなスタイルに合わせやすい。</p>
+  <div class="feat-title">特徴</div>
+  <ul class="feat-list">
+    <li><span class="check">&#x2713;</span>本革×ステンレス</li>
+    <li><span class="check">&#x2713;</span>カジュアルデザイン</li>
+    <li><span class="check">&#x2713;</span>男女兼用サイズ</li>
+    <li><span class="check">&#x2713;</span>カラー交換可能</li>
+  </ul>
+  <div class="specs">
+    <div class="specs-title">スペック詳細</div>
+    <table>
+      <tr><td class="s-label">素材</td><td class="s-value">本革 + ステンレス</td></tr>
+      <tr><td class="s-label">カラー</td><td class="s-value">ブラウン / ブラック / ネイビー</td></tr>
+      <tr><td class="s-label">サイズ展開</td><td class="s-value">フリーサイズ（調整可）</td></tr>
+      <tr><td class="s-label">納期</td><td class="s-value">約5日</td></tr>
+    </table>
+  </div>
+  <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">&#x226B; 詳細を公式サイトで確認</a>
+  <p class="lp-cta-note">※ 公式サイトへ移動します</p>
+</div>
+
+<!-- 選び方ガイド -->
+<div class="lp-guide">
+  <h3>選び方のポイント</h3>
+  <div class="lp-guide-grid">
+    <div class="lp-guide-item">
+      <div class="icon">&#x1F4B0;</div>
+      <div class="label">予算で選ぶ</div>
+      <div class="text">6,800円〜15,800円の価格帯から、予算に合わせて選べます。</div>
+    </div>
+    <div class="lp-guide-item">
+      <div class="icon">&#x2728;</div>
+      <div class="label">素材で選ぶ</div>
+      <div class="text">ステンレス、チタン、レザーなど、用途に合った素材を選択。</div>
+    </div>
+    <div class="lp-guide-item">
+      <div class="icon">&#x1F454;</div>
+      <div class="label">シーンで選ぶ</div>
+      <div class="text">日常使い、特別な日、カジュアルなど、シーンに合わせて。</div>
+    </div>
+  </div>
+</div>
+
+<!-- フッター -->
+<div class="lp-footer">
+  <p>運営: 加藤梓</p>
+  <p>当サイトは情報提供を目的としており、特定の商品を推奨するものではありません。最終的な判断はご自身の責任でお願いいたします。価格・仕様は変更される場合があります。</p>
+  <p><a href="/privacy/">プライバシーポリシー</a></p>
+  <p>お問い合わせ: <a href="mailto:g4space@ymail.ne.jp">g4space@ymail.ne.jp</a></p>
+</div>
+
+</div>
