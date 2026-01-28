@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CONFIG } from "./config";
 
 export const metadata = {
@@ -42,12 +43,21 @@ const styles: Record<string, React.CSSProperties> = {
     color: "rgba(255,255,255,0.8)",
     textDecoration: "underline",
   },
+  prBadge: {
+    textAlign: "center",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.7)",
+    marginBottom: 8,
+  },
 };
 
 export default function LpLayout({ children }: { children: React.ReactNode }) {
   return (
     <div style={styles.body}>
       <div style={styles.container}>
+        {/* PR表記（景品表示法・ステマ規制対応） */}
+        <div style={styles.prBadge}>当ページはアフィリエイト広告を利用しています</div>
+
         <header style={styles.header}>
           <h1 style={styles.title}>{CONFIG.genre}診断</h1>
           <p style={styles.subtitle}>{CONFIG.subtitle}</p>
@@ -58,6 +68,11 @@ export default function LpLayout({ children }: { children: React.ReactNode }) {
         <footer style={styles.footer}>
           <p>運営: {CONFIG.legal.operator}</p>
           <p style={{ marginTop: 8 }}>{CONFIG.legal.disclaimer}</p>
+          <p style={{ marginTop: 8 }}>
+            <Link href="/lp/privacy" style={styles.footerLink}>
+              プライバシーポリシー
+            </Link>
+          </p>
           <p style={{ marginTop: 8 }}>
             お問い合わせ:{" "}
             <a href={`mailto:${CONFIG.legal.email}`} style={styles.footerLink}>
