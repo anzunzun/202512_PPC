@@ -38,9 +38,10 @@
 .lp-specs td{padding:7px 0;border-bottom:1px solid #eee}
 .lp-specs .sl{color:#888;width:35%}
 
-/* CTAボタン */
-.lp-cta{display:block;width:100%;padding:18px 16px;font-size:17px;font-weight:800;background:linear-gradient(135deg,#ff6b6b 0%,#ee5a24 100%);color:#fff !important;border:none;border-radius:14px;text-align:center;text-decoration:none !important;min-height:60px;line-height:24px;cursor:pointer;transition:all .2s;box-shadow:0 4px 15px rgba(238,90,36,.4)}
-.lp-cta:active{transform:scale(.98);box-shadow:0 2px 8px rgba(238,90,36,.3)}
+/* CTAボタン（画像） */
+.lp-cta{display:block;width:100%;text-align:center;text-decoration:none !important;cursor:pointer;transition:all .2s}
+.lp-cta img{width:100%;max-width:320px;height:auto;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+.lp-cta:active img{transform:scale(.98);box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .lp-cta-note{font-size:10px;color:#aaa;text-align:center;margin-top:6px}
 
 /* 選び方ガイド */
@@ -58,11 +59,12 @@
 .lp-privacy h4{font-size:13px;font-weight:700;color:#555;margin:14px 0 6px}
 .lp-privacy p{font-size:12px;color:#666;line-height:1.7;margin:0 0 6px}
 
-/* フローティングCTA */
-@keyframes pulse{0%,100%{box-shadow:0 4px 20px rgba(238,90,36,.5)}50%{box-shadow:0 4px 30px rgba(238,90,36,.8),0 0 40px rgba(238,90,36,.4)}}
+/* フローティングCTA（画像） */
+@keyframes pulse{0%,100%{filter:drop-shadow(0 4px 12px rgba(0,0,0,.3))}50%{filter:drop-shadow(0 4px 20px rgba(255,107,107,.6))}}
 .lp-float{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.98);backdrop-filter:blur(8px);padding:12px 16px;box-shadow:0 -4px 20px rgba(0,0,0,.15);z-index:9999}
-.lp-float a{display:flex;align-items:center;justify-content:center;gap:8px;max-width:480px;margin:0 auto;padding:16px;font-size:18px;font-weight:800;background:linear-gradient(135deg,#ff6b6b 0%,#ee5a24 100%);color:#fff !important;border:none;border-radius:14px;text-align:center;text-decoration:none !important;min-height:56px;box-shadow:0 4px 20px rgba(238,90,36,.5);animation:pulse 2s infinite}
-.lp-float a:active{transform:scale(.98);animation:none}
+.lp-float a{display:block;max-width:320px;margin:0 auto;text-decoration:none !important}
+.lp-float img{width:100%;height:auto;border-radius:8px;animation:pulse 2s infinite}
+.lp-float a:active img{transform:scale(.98);animation:none}
 
 /* フッター */
 .lp-footer{text-align:center;padding:20px 0 80px;font-size:11px;color:#999;line-height:1.8}
@@ -110,7 +112,7 @@
         <tr><td class="sl">納期</td><td>約1週間</td></tr>
       </table>
     </div>
-    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">▶ 購入はこちら</a>
+    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta"><img src="https://frame-illust.com/fi/wp-content/uploads/2016/04/buy-or400.png" alt="購入はこちら" loading="lazy"></a>
     <p class="lp-cta-note">※ 公式サイトへ移動します</p>
   </div>
 </div>
@@ -141,7 +143,7 @@
         <tr><td class="sl">納期</td><td>約1〜2週間</td></tr>
       </table>
     </div>
-    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">▶ 購入はこちら</a>
+    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta"><img src="https://frame-illust.com/fi/wp-content/uploads/2016/04/buy-or400.png" alt="購入はこちら" loading="lazy"></a>
     <p class="lp-cta-note">※ 公式サイトへ移動します</p>
   </div>
 </div>
@@ -172,7 +174,7 @@
         <tr><td class="sl">納期</td><td>約5日</td></tr>
       </table>
     </div>
-    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta">▶ 購入はこちら</a>
+    <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta"><img src="https://frame-illust.com/fi/wp-content/uploads/2016/04/buy-or400.png" alt="購入はこちら" loading="lazy"></a>
     <p class="lp-cta-note">※ 公式サイトへ移動します</p>
   </div>
 </div>
@@ -223,5 +225,5 @@
 
 <!-- フローティングCTA -->
 <div class="lp-float">
-  <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored">▶ 今すぐ購入する</a>
+  <a href="https://px.a8.net/svt/ejp?a8mat=4AVE83+8V4D0Y+5M2G+5YZ75" target="_blank" rel="noopener noreferrer sponsored"><img src="https://frame-illust.com/fi/wp-content/uploads/2016/04/buy-or400.png" alt="購入はこちら"></a>
 </div>
