@@ -28,6 +28,25 @@ const templates = [
   { key: "reviewCount", label: "レビュー数", type: "number" },
   { key: "rating", label: "評価（★）", type: "number" },
 
+  { key: "pageTitle", label: "ページタイトル", type: "text" },
+  { key: "pageH1", label: "ページH1", type: "text" },
+  { key: "pageDescription", label: "ページ説明文", type: "text" },
+  { key: "wordCount", label: "文字数", type: "number" },
+
+  { key: "totalScore", label: "総合スコア", type: "number" },
+  { key: "adPolicyRisk", label: "広告ポリシーリスク", type: "number" },
+  { key: "trademarkRisk", label: "商標リスク", type: "number" },
+  { key: "bridgePageRisk", label: "ブリッジページリスク", type: "number" },
+
+  { key: "adTitle1", label: "広告見出し1", type: "text" },
+  { key: "adTitle2", label: "広告見出し2", type: "text" },
+  { key: "adTitle3", label: "広告見出し3", type: "text" },
+  { key: "adDescription1", label: "広告説明文1", type: "text" },
+  { key: "adDescription2", label: "広告説明文2", type: "text" },
+
+  { key: "suggestedKeywords", label: "キーワード提案(JSON)", type: "note" },
+  { key: "extractedKeywords", label: "抽出キーワード", type: "text" },
+
   { key: "notes", label: "メモ", type: "note" },
 ];
 
