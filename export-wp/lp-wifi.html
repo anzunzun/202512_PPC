@@ -1,0 +1,229 @@
+<!-- WordPress用 WiFi比較ページ＋プライバシーポリシー統合版 モバイルファースト -->
+<!-- カスタムHTMLブロックに貼り付けてください -->
+
+<style>
+*{box-sizing:border-box}
+.lp{max-width:480px;margin:0 auto;padding:0 12px;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;color:#333;line-height:1.7;font-size:15px}
+
+/* ヘッダー */
+.lp-hero{background:linear-gradient(135deg,#0ea5e9 0%,#2563eb 100%);border-radius:16px;padding:28px 16px;text-align:center;color:#fff;margin-bottom:16px}
+.lp-hero h1{font-size:22px;font-weight:800;margin:0 0 6px;letter-spacing:.5px}
+.lp-hero p{font-size:13px;opacity:.85;margin:0}
+
+/* ファーストビュー価値提案 */
+.lp-value{background:#fff;border-radius:14px;padding:20px 16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);text-align:center}
+.lp-value h2{font-size:20px;font-weight:800;margin:0 0 10px;color:#333}
+.lp-value p{font-size:14px;color:#666;margin:0}
+
+/* 商品カード */
+.lp-item{background:#fff;border-radius:14px;padding:0;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);overflow:hidden}
+.lp-item img{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;display:block}
+.lp-item-body{padding:16px}
+.lp-item .tag{display:inline-block;padding:5px 14px;border-radius:20px;color:#fff;font-weight:700;font-size:13px;margin-bottom:12px}
+.lp-item .price-row{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed #e5e5e5}
+.lp-item .price{font-size:26px;font-weight:800;color:#e74c3c}
+.lp-item .price-sub{font-size:11px;color:#999;margin-left:6px}
+.lp-item .desc{font-size:14px;color:#555;margin-bottom:16px}
+
+/* 特徴 */
+.lp-feat-title{font-size:13px;font-weight:700;color:#333;padding-left:8px;border-left:3px solid #3498db;margin-bottom:8px}
+.lp-feat{list-style:none;padding:0;margin:0 0 16px}
+.lp-feat li{font-size:14px;color:#444;padding:6px 0;display:flex;align-items:flex-start;gap:6px}
+.lp-feat .ck{color:#27ae60;font-weight:700;flex-shrink:0}
+
+/* スペック */
+.lp-specs{background:#f7f8fa;border-radius:10px;padding:14px;margin-bottom:16px}
+.lp-specs-title{font-size:13px;font-weight:700;color:#333;margin-bottom:8px}
+.lp-specs table{width:100%;font-size:13px;border-collapse:collapse}
+.lp-specs td{padding:7px 0;border-bottom:1px solid #eee}
+.lp-specs .sl{color:#888;width:35%}
+
+/* CTAボタン（画像） */
+.lp-cta{display:block;width:100%;text-align:center;text-decoration:none !important;cursor:pointer;transition:all .2s}
+.lp-cta img{width:100%;max-width:320px;height:auto;border-radius:8px;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+.lp-cta:active img{transform:scale(.98);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.lp-cta-note{font-size:10px;color:#aaa;text-align:center;margin-top:6px}
+
+/* 選び方ガイド */
+.lp-guide{background:#fff;border-radius:14px;padding:20px 16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.lp-guide h3{font-size:17px;font-weight:800;text-align:center;margin:0 0 16px}
+.lp-guide-item{padding:12px 0;border-bottom:1px solid #f0f0f0;display:flex;gap:12px;align-items:flex-start}
+.lp-guide-item:last-child{border-bottom:none}
+.lp-guide-item .ico{font-size:24px;flex-shrink:0;width:36px;text-align:center}
+.lp-guide-item .lbl{font-size:14px;font-weight:700;color:#333;margin-bottom:2px}
+.lp-guide-item .txt{font-size:13px;color:#666}
+
+/* プライバシーポリシー */
+.lp-privacy{background:#f7f8fa;border-radius:14px;padding:20px 16px;margin-bottom:14px}
+.lp-privacy h3{font-size:15px;font-weight:700;color:#333;margin:0 0 12px;text-align:center}
+.lp-privacy h4{font-size:13px;font-weight:700;color:#555;margin:14px 0 6px}
+.lp-privacy p{font-size:12px;color:#666;line-height:1.7;margin:0 0 6px}
+
+/* フローティングCTA（画像） */
+@keyframes pulse{0%,100%{filter:drop-shadow(0 4px 12px rgba(0,0,0,.3))}50%{filter:drop-shadow(0 4px 20px rgba(255,107,107,.6))}}
+.lp-float{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.98);backdrop-filter:blur(8px);padding:12px 16px;box-shadow:0 -4px 20px rgba(0,0,0,.15);z-index:9999}
+.lp-float a{display:block;max-width:320px;margin:0 auto;text-decoration:none !important}
+.lp-float img{width:100%;height:auto;border-radius:8px;animation:pulse 2s infinite}
+.lp-float a:active img{transform:scale(.98);animation:none}
+
+/* フッター */
+.lp-footer{text-align:center;padding:20px 0 80px;font-size:11px;color:#999;line-height:1.8}
+.lp-footer a{color:#0ea5e9}
+.lp-pr{font-size:10px;color:#aaa}
+</style>
+
+<div class="lp">
+
+<!-- ヘッダー -->
+<div class="lp-hero">
+  <h1>WiFi回線タイプ診断</h1>
+  <p>使い方・環境・予算で選ぶ</p>
+</div>
+
+<!-- ファーストビュー -->
+<div class="lp-value">
+  <h2>3つの条件で比較して選ぶ</h2>
+  <p>利用環境・速度・手軽さから、自分に合った回線タイプを見つけましょう。</p>
+</div>
+
+<!-- タイプA: ホームルーター -->
+<div class="lp-item">
+  <img src="https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=600&h=450&fit=crop" alt="ホームルーターのイメージ" loading="lazy">
+  <div class="lp-item-body">
+    <span class="tag" style="background:#0ea5e9">ホームルータータイプ</span>
+    <div class="price-row">
+      <span class="price">3,000円台〜</span>
+      <span class="price-sub">月額目安（税込）</span>
+    </div>
+    <p class="desc">コンセントに挿すだけで開通。工事不要で引越しにも対応しやすいタイプです。</p>
+    <div class="lp-feat-title">特徴</div>
+    <ul class="lp-feat">
+      <li><span class="ck">&#x2713;</span>工事不要・届いたその日から使える</li>
+      <li><span class="ck">&#x2713;</span>データ容量無制限プランあり</li>
+      <li><span class="ck">&#x2713;</span>同時接続10台以上対応</li>
+      <li><span class="ck">&#x2713;</span>引越し時は住所変更のみ</li>
+    </ul>
+    <div class="lp-specs">
+      <div class="lp-specs-title">スペック目安</div>
+      <table>
+        <tr><td class="sl">回線種別</td><td>無線（4G/5G）</td></tr>
+        <tr><td class="sl">速度目安</td><td>下り最大数百Mbps〜</td></tr>
+        <tr><td class="sl">工事</td><td>不要</td></tr>
+        <tr><td class="sl">持ち運び</td><td>不可（自宅据置型）</td></tr>
+      </table>
+    </div>
+    <a href="https://px.a8.net/svt/ejp?a8mat=4AVHBZ+DW44XE+B4+2BDBUB" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta"><img src="https://frame-illust.com/fi/wp-content/uploads/2016/04/buy-or400.png" alt="購入はこちら" loading="lazy"></a>
+    <p class="lp-cta-note">※ 提供元サイトへ移動します</p>
+  </div>
+</div>
+
+<!-- タイプB: モバイルWiFi -->
+<div class="lp-item">
+  <img src="https://images.unsplash.com/photo-1516044734145-07ca8eef8731?w=600&h=450&fit=crop" alt="モバイルWiFiのイメージ" loading="lazy">
+  <div class="lp-item-body">
+    <span class="tag" style="background:#8b5cf6">モバイルWiFiタイプ</span>
+    <div class="price-row">
+      <span class="price">2,000円台〜</span>
+      <span class="price-sub">月額目安（税込）</span>
+    </div>
+    <p class="desc">バッテリー内蔵で持ち運び可能。外出先でもノートPCやタブレットに接続できます。</p>
+    <div class="lp-feat-title">特徴</div>
+    <ul class="lp-feat">
+      <li><span class="ck">&#x2713;</span>外出先でもインターネット接続</li>
+      <li><span class="ck">&#x2713;</span>工事不要・即日利用可能</li>
+      <li><span class="ck">&#x2713;</span>ポケットサイズで携帯しやすい</li>
+      <li><span class="ck">&#x2713;</span>出張・旅行時にも活用できる</li>
+    </ul>
+    <div class="lp-specs">
+      <div class="lp-specs-title">スペック目安</div>
+      <table>
+        <tr><td class="sl">回線種別</td><td>無線（4G/5G）</td></tr>
+        <tr><td class="sl">速度目安</td><td>下り最大数百Mbps〜</td></tr>
+        <tr><td class="sl">バッテリー</td><td>約8〜12時間</td></tr>
+        <tr><td class="sl">持ち運び</td><td>可能（ポケットサイズ）</td></tr>
+      </table>
+    </div>
+    <a href="https://px.a8.net/svt/ejp?a8mat=4AVHBZ+DW44XE+B4+2BDBUB" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta"><img src="https://frame-illust.com/fi/wp-content/uploads/2016/04/buy-or400.png" alt="購入はこちら" loading="lazy"></a>
+    <p class="lp-cta-note">※ 提供元サイトへ移動します</p>
+  </div>
+</div>
+
+<!-- タイプC: 光回線 -->
+<div class="lp-item">
+  <img src="https://images.unsplash.com/photo-1544197150-b99a580bb7a8?w=600&h=450&fit=crop" alt="光回線のイメージ" loading="lazy">
+  <div class="lp-item-body">
+    <span class="tag" style="background:#059669">光回線タイプ</span>
+    <div class="price-row">
+      <span class="price">4,000円台〜</span>
+      <span class="price-sub">月額目安（税込）</span>
+    </div>
+    <p class="desc">有線接続で安定した高速通信。動画視聴やオンラインゲームに適しています。</p>
+    <div class="lp-feat-title">特徴</div>
+    <ul class="lp-feat">
+      <li><span class="ck">&#x2713;</span>下り最大1Gbps〜の高速通信</li>
+      <li><span class="ck">&#x2713;</span>通信制限なしで使い放題</li>
+      <li><span class="ck">&#x2713;</span>家族全員で同時接続しても安定</li>
+      <li><span class="ck">&#x2713;</span>オンラインゲーム・動画に最適</li>
+    </ul>
+    <div class="lp-specs">
+      <div class="lp-specs-title">スペック目安</div>
+      <table>
+        <tr><td class="sl">回線種別</td><td>有線（光ファイバー）</td></tr>
+        <tr><td class="sl">速度目安</td><td>下り最大1Gbps〜</td></tr>
+        <tr><td class="sl">工事</td><td>必要（1〜2週間程度）</td></tr>
+        <tr><td class="sl">持ち運び</td><td>不可（自宅固定）</td></tr>
+      </table>
+    </div>
+    <a href="https://px.a8.net/svt/ejp?a8mat=4AVHBZ+DW44XE+B4+2BDBUB" target="_blank" rel="noopener noreferrer sponsored" class="lp-cta"><img src="https://frame-illust.com/fi/wp-content/uploads/2016/04/buy-or400.png" alt="購入はこちら" loading="lazy"></a>
+    <p class="lp-cta-note">※ 提供元サイトへ移動します</p>
+  </div>
+</div>
+
+<!-- 選び方ガイド -->
+<div class="lp-guide">
+  <h3>選び方のポイント</h3>
+  <div class="lp-guide-item">
+    <div class="ico">&#x1F3E0;</div>
+    <div><div class="lbl">利用場所で選ぶ</div><div class="txt">自宅のみならホームルーターか光回線。外出先でも使うならモバイルWiFi。</div></div>
+  </div>
+  <div class="lp-guide-item">
+    <div class="ico">&#x26A1;</div>
+    <div><div class="lbl">速度で選ぶ</div><div class="txt">動画やゲームを快適に使うなら光回線。普段使いにはホームルーターで十分。</div></div>
+  </div>
+  <div class="lp-guide-item">
+    <div class="ico">&#x1F4B0;</div>
+    <div><div class="lbl">手軽さで選ぶ</div><div class="txt">工事不要ですぐ使いたいならホームルーターかモバイルWiFi。</div></div>
+  </div>
+</div>
+
+<!-- プライバシーポリシー -->
+<div class="lp-privacy">
+  <h3>プライバシーポリシー</h3>
+
+  <h4>広告について</h4>
+  <p>当サイトは、第三者配信の広告サービス（Google広告、A8.net等のアフィリエイトプログラム）を利用しています。広告配信事業者は、ユーザーの興味に応じた広告を表示するためにCookieを使用することがあります。</p>
+  <p>当サイト内のリンクの一部はアフィリエイトリンクであり、リンク先での購入により当サイト運営者が報酬を受け取る場合があります。これによりユーザーに追加費用が発生することはありません。</p>
+
+  <h4>個人情報の取り扱い</h4>
+  <p>当サイトでは、お問い合わせの際にメールアドレス等の個人情報をご提供いただく場合があります。取得した個人情報は、お問い合わせへの対応のみに利用し、第三者に提供することはありません。</p>
+
+  <h4>Cookieについて</h4>
+  <p>当サイトでは、アクセス解析および広告配信のためにCookieを使用しています。Cookieの使用を望まない場合は、ブラウザの設定により無効にすることが可能です。</p>
+
+  <h4>免責事項</h4>
+  <p>当サイトは情報提供を目的としており、特定の商品を推奨するものではありません。最終的な判断はご自身の責任でお願いいたします。価格・仕様は変更される場合があります。</p>
+</div>
+
+<!-- フッター -->
+<div class="lp-footer">
+  <p class="lp-pr">当ページはアフィリエイト広告を利用しています</p>
+  <p>運営: 加藤梓</p>
+  <p>お問い合わせ: <a href="mailto:g4space@ymail.ne.jp">g4space@ymail.ne.jp</a></p>
+</div>
+
+</div>
+
+<!-- フローティングCTA -->
+<div class="lp-float">
+  <a href="https://px.a8.net/svt/ejp?a8mat=4AVHBZ+DW44XE+B4+2BDBUB" target="_blank" rel="noopener noreferrer sponsored"><img src="https://frame-illust.com/fi/wp-content/uploads/2016/04/buy-or400.png" alt="購入はこちら"></a>
+</div>
