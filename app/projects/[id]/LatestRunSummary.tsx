@@ -35,12 +35,17 @@ export default function LatestRunSummary({
 }) {
   const itemsByKey = resultJson?.itemsByKey ?? {};
 
-  // 広告文
-  const adTitle1 = itemsByKey.adTitle1 || "";
-  const adTitle2 = itemsByKey.adTitle2 || "";
-  const adTitle3 = itemsByKey.adTitle3 || "";
-  const adDesc1 = itemsByKey.adDescription1 || "";
-  const adDesc2 = itemsByKey.adDescription2 || "";
+  // 広告文（見出し最大15、説明文最大4）
+  const adTitles: string[] = [];
+  for (let i = 1; i <= 15; i++) {
+    const v = itemsByKey[`adTitle${i}`];
+    if (v) adTitles.push(v);
+  }
+  const adDescs: string[] = [];
+  for (let i = 1; i <= 4; i++) {
+    const v = itemsByKey[`adDescription${i}`];
+    if (v) adDescs.push(v);
+  }
   const targetKw = itemsByKey.targetKw || "";
 
   // キーワード提案
@@ -51,7 +56,7 @@ export default function LatestRunSummary({
     }
   } catch {}
 
-  const hasAdCopy = adTitle1 || adDesc1;
+  const hasAdCopy = adTitles.length > 0 || adDescs.length > 0;
   const hasKeywords = suggestion && (suggestion.mainKeywords?.length > 0 || suggestion.longTailKeywords?.length > 0);
 
   if (!hasAdCopy && !hasKeywords) return null;
@@ -93,36 +98,47 @@ export default function LatestRunSummary({
             </div>
           )}
 
-          {/* 広告プレビュー風 */}
+          {/* 広告プレビュー風（上位3見出し + 上位2説明文） */}
           <div style={{ padding: 12, border: "1px solid #dadce0", borderRadius: 8, background: "#fff" }}>
             <div style={{ fontSize: 14, color: "#1a0dab", fontWeight: 500, lineHeight: 1.4 }}>
-              {[adTitle1, adTitle2, adTitle3].filter(Boolean).join(" | ")}
+              {adTitles.slice(0, 3).join(" | ")}
             </div>
             <div style={{ fontSize: 12, color: "#006621", marginTop: 2 }}>
               広告 - example.com
             </div>
             <div style={{ fontSize: 13, color: "#4d5156", marginTop: 4, lineHeight: 1.5 }}>
-              {adDesc1}
-              {adDesc2 && <> {adDesc2}</>}
+              {adDescs.slice(0, 2).join(" ")}
             </div>
           </div>
 
-          {/* 個別フィールド */}
-          <div style={{ marginTop: 12, display: "grid", gap: 6, fontSize: 12 }}>
-            {[
-              ["見出し1", adTitle1],
-              ["見出し2", adTitle2],
-              ["見出し3", adTitle3],
-              ["説明文1", adDesc1],
-              ["説明文2", adDesc2],
-            ]
-              .filter(([, v]) => v)
-              .map(([label, value]) => (
-                <div key={label} style={{ display: "flex", gap: 8 }}>
-                  <span style={{ fontWeight: 700, minWidth: 60, color: "#666" }}>{label}:</span>
-                  <span>{value}</span>
+          {/* 見出し一覧 */}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: "#444", marginBottom: 6 }}>
+              見出し（{adTitles.length}/15）
+            </div>
+            <div style={{ display: "grid", gap: 4, fontSize: 12 }}>
+              {adTitles.map((t, i) => (
+                <div key={i} style={{ display: "flex", gap: 8 }}>
+                  <span style={{ fontWeight: 700, minWidth: 24, color: "#888" }}>{i + 1}.</span>
+                  <span>{t}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* 説明文一覧 */}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontWeight: 700, fontSize: 12, color: "#444", marginBottom: 6 }}>
+              説明文（{adDescs.length}/4）
+            </div>
+            <div style={{ display: "grid", gap: 4, fontSize: 12 }}>
+              {adDescs.map((d, i) => (
+                <div key={i} style={{ display: "flex", gap: 8 }}>
+                  <span style={{ fontWeight: 700, minWidth: 24, color: "#888" }}>{i + 1}.</span>
+                  <span>{d}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

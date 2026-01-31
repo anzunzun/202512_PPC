@@ -38,11 +38,18 @@ const templates = [
   { key: "trademarkRisk", label: "商標リスク", type: "number" },
   { key: "bridgePageRisk", label: "ブリッジページリスク", type: "number" },
 
-  { key: "adTitle1", label: "広告見出し1", type: "text" },
-  { key: "adTitle2", label: "広告見出し2", type: "text" },
-  { key: "adTitle3", label: "広告見出し3", type: "text" },
-  { key: "adDescription1", label: "広告説明文1", type: "text" },
-  { key: "adDescription2", label: "広告説明文2", type: "text" },
+  // 広告見出し（最大15本）
+  ...Array.from({ length: 15 }, (_, i) => ({
+    key: `adTitle${i + 1}`,
+    label: `広告見出し${i + 1}`,
+    type: "text",
+  })),
+  // 広告説明文（最大4本）
+  ...Array.from({ length: 4 }, (_, i) => ({
+    key: `adDescription${i + 1}`,
+    label: `広告説明文${i + 1}`,
+    type: "text",
+  })),
 
   { key: "extractedKeywords", label: "抽出キーワード", type: "text" },
 

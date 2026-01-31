@@ -71,12 +71,13 @@ export const ppcProvider: ResearchProvider = {
       adPolicyRisk: String(scores.adPolicyRisk),
       trademarkRisk: String(scores.trademarkRisk),
       bridgePageRisk: String(scores.bridgePageRisk),
-      // Google広告文
-      adTitle1: adCopy.title1,
-      adTitle2: adCopy.title2,
-      adTitle3: adCopy.title3,
-      adDescription1: adCopy.description1,
-      adDescription2: adCopy.description2,
+      // Google広告文（見出し15・説明文4）
+      ...Object.fromEntries(
+        adCopy.titles.map((t, i) => [`adTitle${i + 1}`, t])
+      ),
+      ...Object.fromEntries(
+        adCopy.descriptions.map((d, i) => [`adDescription${i + 1}`, d])
+      ),
     };
 
     // キーワード提案をJSON形式で保存
@@ -261,52 +262,89 @@ function cleanKeyword(text: string): string {
 
 /**
  * Google広告文を生成（商標なし・一般KW構成）
- * 見出し: 全角15文字（半角30文字）以内
- * 説明文: 全角45文字（半角90文字）以内
+ * レスポンシブ検索広告: 見出し最大15本（全角15文字）、説明文最大4本（全角45文字）
+ * CVR重視の訴求パターンを網羅
  */
 function generateAdCopy(
   scraped: ScrapedData | null,
   targetKw: string,
   keywordSuggestion: ReturnType<typeof suggestKeywords> | null
 ): {
-  title1: string;
-  title2: string;
-  title3: string;
-  description1: string;
-  description2: string;
+  titles: string[];
+  descriptions: string[];
 } {
-  // メインKWを短くする（最初のカンマ区切り）
   const mainKw = targetKw.split(/[,、]/)[0]?.trim() || "商品";
+  // 短縮KW（見出しに収まるよう）
+  const shortKw = mainKw.length > 8 ? mainKw.slice(0, 8) : mainKw;
 
-  // 購入意図の高いKWを取得
-  const purchaseKws = keywordSuggestion?.mainKeywords
-    .filter((k) => k.category === "purchase")
-    .sort((a, b) => b.score - a.score) || [];
-  const compareKws = keywordSuggestion?.mainKeywords
-    .filter((k) => k.category === "compare")
-    .sort((a, b) => b.score - a.score) || [];
+  // ---- 見出し候補（優先度順、全角15文字以内） ----
+  const titleCandidates: string[] = [
+    // 1-3: KW挿入 + 高CV訴求
+    `${shortKw} 比較・選び方`,
+    `${shortKw} 通販`,
+    `${shortKw} 人気ランキング`,
+    // 4-6: 行動喚起・緊急性
+    `今すぐチェック`,
+    `失敗しない選び方`,
+    `納得の一品を見つける`,
+    // 7-9: 価格・お得訴求
+    `${shortKw} 安い順に比較`,
+    `送料無料あり`,
+    `セール・特価情報`,
+    // 10-12: 信頼・安心訴求
+    `口コミで選ぶ${shortKw}`,
+    `初めてでも安心`,
+    `選んで後悔しない`,
+    // 13-15: ギフト・ターゲット別
+    `プレゼントに最適`,
+    `人気の${shortKw}特集`,
+    `おすすめ${shortKw}まとめ`,
+  ];
 
-  // 見出し候補（全角15文字以内）
-  const title1 = truncateJa(`${mainKw} 比較・選び方`, 15);
-  const title2 = truncateJa(
-    purchaseKws[0]
-      ? `${purchaseKws[0].keyword.replace(mainKw, "").trim() || "お得に"}購入`
-      : `${mainKw} 通販`,
-    15
-  );
-  const title3 = truncateJa("失敗しない選び方ガイド", 15);
+  // KW提案から追加の見出し素材を生成
+  if (keywordSuggestion) {
+    const topKws = [...keywordSuggestion.mainKeywords, ...keywordSuggestion.longTailKeywords]
+      .filter((k) => k.category === "purchase" || k.category === "compare")
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
 
-  // 説明文候補（全角45文字以内）
-  const description1 = truncateJa(
-    `${mainKw}を徹底比較。あなたに合った${mainKw}が見つかる選び方ガイド。`,
-    45
-  );
-  const description2 = truncateJa(
+    for (const kw of topKws) {
+      // KWそのものを見出しに（短ければ）
+      if (kw.keyword.length <= 15 && !titleCandidates.some((t) => t === kw.keyword)) {
+        titleCandidates.push(kw.keyword);
+      }
+    }
+  }
+
+  // 重複排除 + 全角15文字トランケート + 15本に制限
+  const seen = new Set<string>();
+  const titles: string[] = [];
+  for (const raw of titleCandidates) {
+    const t = truncateJa(raw, 15);
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    titles.push(t);
+    if (titles.length >= 15) break;
+  }
+
+  // ---- 説明文候補（全角45文字以内、4本） ----
+  const descCandidates: string[] = [
+    // 比較・選び方訴求
+    `${mainKw}を徹底比較。あなたに合った一品が見つかる選び方ガイド。`,
+    // 信頼・実績訴求
     `価格・特徴・口コミを比較して、納得の${mainKw}選びをサポート。`,
-    45
-  );
+    // 行動喚起
+    `今すぐ${mainKw}を比較。送料無料・セール情報もまとめてチェック。`,
+    // 安心・初心者訴求
+    `初めてでも失敗しない${mainKw}の選び方を分かりやすく解説。`,
+  ];
 
-  return { title1, title2, title3, description1, description2 };
+  const descriptions = descCandidates
+    .map((d) => truncateJa(d, 45))
+    .filter(Boolean)
+    .slice(0, 4);
+
+  return { titles, descriptions };
 }
 
 /** 全角文字数でトランケート（半角は0.5文字換算） */
