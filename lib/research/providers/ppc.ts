@@ -56,7 +56,10 @@ export const ppcProvider: ResearchProvider = {
       targetKw = generateTargetKw(scraped);
     }
 
-    // 6. 結果組み立て
+    // 6. Google広告文を生成
+    const adCopy = generateAdCopy(scraped, targetKw, keywordSuggestion);
+
+    // 7. 結果組み立て
     const kv: Record<string, string> = {
       referenceUrl: referenceUrl || "",
       targetKw,
@@ -68,6 +71,12 @@ export const ppcProvider: ResearchProvider = {
       adPolicyRisk: String(scores.adPolicyRisk),
       trademarkRisk: String(scores.trademarkRisk),
       bridgePageRisk: String(scores.bridgePageRisk),
+      // Google広告文
+      adTitle1: adCopy.title1,
+      adTitle2: adCopy.title2,
+      adTitle3: adCopy.title3,
+      adDescription1: adCopy.description1,
+      adDescription2: adCopy.description2,
     };
 
     // キーワード提案をJSON形式で保存
@@ -248,6 +257,70 @@ function cleanKeyword(text: string): string {
     return chunk.slice(0, 40).trim();
   }
   return words.slice(0, 6).join(" ").slice(0, 50).trim();
+}
+
+/**
+ * Google広告文を生成（商標なし・一般KW構成）
+ * 見出し: 全角15文字（半角30文字）以内
+ * 説明文: 全角45文字（半角90文字）以内
+ */
+function generateAdCopy(
+  scraped: ScrapedData | null,
+  targetKw: string,
+  keywordSuggestion: ReturnType<typeof suggestKeywords> | null
+): {
+  title1: string;
+  title2: string;
+  title3: string;
+  description1: string;
+  description2: string;
+} {
+  // メインKWを短くする（最初のカンマ区切り）
+  const mainKw = targetKw.split(/[,、]/)[0]?.trim() || "商品";
+
+  // 購入意図の高いKWを取得
+  const purchaseKws = keywordSuggestion?.mainKeywords
+    .filter((k) => k.category === "purchase")
+    .sort((a, b) => b.score - a.score) || [];
+  const compareKws = keywordSuggestion?.mainKeywords
+    .filter((k) => k.category === "compare")
+    .sort((a, b) => b.score - a.score) || [];
+
+  // 見出し候補（全角15文字以内）
+  const title1 = truncateJa(`${mainKw} 比較・選び方`, 15);
+  const title2 = truncateJa(
+    purchaseKws[0]
+      ? `${purchaseKws[0].keyword.replace(mainKw, "").trim() || "お得に"}購入`
+      : `${mainKw} 通販`,
+    15
+  );
+  const title3 = truncateJa("失敗しない選び方ガイド", 15);
+
+  // 説明文候補（全角45文字以内）
+  const description1 = truncateJa(
+    `${mainKw}を徹底比較。あなたに合った${mainKw}が見つかる選び方ガイド。`,
+    45
+  );
+  const description2 = truncateJa(
+    `価格・特徴・口コミを比較して、納得の${mainKw}選びをサポート。`,
+    45
+  );
+
+  return { title1, title2, title3, description1, description2 };
+}
+
+/** 全角文字数でトランケート（半角は0.5文字換算） */
+function truncateJa(text: string, maxFullWidth: number): string {
+  let width = 0;
+  let i = 0;
+  for (; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    // 半角: ASCII + 半角カナ
+    const isHalf = code <= 0x7e || (code >= 0xff61 && code <= 0xff9f);
+    width += isHalf ? 0.5 : 1;
+    if (width > maxFullWidth) break;
+  }
+  return text.slice(0, i);
 }
 
 function toStr(v: unknown): string {

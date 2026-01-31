@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { unstable_noStore as noStore } from "next/cache";
 import ResearchItemsEditor from "./ResearchItemsEditor";
+import LatestRunSummary from "./LatestRunSummary";
 import { getProjectResearchItems } from "@/app/actions/researchItems";
+import { prisma } from "@/lib/prisma";
 
 export default async function ProjectDetailPage({
   params,
@@ -15,6 +17,13 @@ export default async function ProjectDetailPage({
 
   // ★ isActive=true のテンプレだけ + 新方式値を合体した正しい入力行を作る
   const initialItems = await getProjectResearchItems(id, scope);
+
+  // 最新Runの結果を取得
+  const latestRun = await prisma.researchRun.findFirst({
+    where: { projectId: id, scope, status: "ok" },
+    orderBy: [{ startedAt: "desc" }, { id: "desc" }],
+    select: { id: true, startedAt: true, resultJson: true },
+  });
 
   return (
     <main style={{ padding: 18, maxWidth: 1100, margin: "0 auto" }}>
@@ -39,7 +48,7 @@ export default async function ProjectDetailPage({
             一覧へ戻る
           </Link>
           <Link
-            href={`/projects/${id}/apply`}
+            href={`/projects/${id}/apply?scope=${scope}&autorun=1`}
             style={{ color: "blue", textDecoration: "underline" }}
           >
             Apply（autorun）
@@ -64,6 +73,12 @@ export default async function ProjectDetailPage({
           </Link>
         </div>
       </div>
+
+      {latestRun && (
+        <div style={{ marginTop: 18 }}>
+          <LatestRunSummary resultJson={latestRun.resultJson as any} runId={String(latestRun.id)} projectId={id} />
+        </div>
+      )}
 
       <div style={{ marginTop: 18 }}>
         <ResearchItemsEditor {...({ projectId: id, initialItems } as any)} />
