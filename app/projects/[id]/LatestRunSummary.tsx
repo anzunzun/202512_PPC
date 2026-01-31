@@ -5,6 +5,8 @@ type SuggestedKeyword = {
   category: "purchase" | "compare" | "info" | "problem";
   score: number;
   reason: string;
+  matchType?: "broad" | "phrase" | "exact";
+  volumeRisk?: "high" | "medium" | "low";
 };
 
 type KeywordSuggestionData = {
@@ -156,36 +158,43 @@ export default function LatestRunSummary({
                     {info.label}
                   </span>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                    {keywords.map((kw, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                          padding: "4px 10px",
-                          borderRadius: 6,
-                          background: "#f3f4f6",
-                          border: "1px solid #e5e7eb",
-                          fontSize: 12,
-                        }}
-                        title={kw.reason}
-                      >
-                        {kw.keyword}
+                    {keywords.map((kw, i) => {
+                      const volIcon = kw.volumeRisk === "high" ? "\u{1F7E2}" : kw.volumeRisk === "low" ? "\u{1F534}" : "\u{1F7E1}";
+                      const matchLabel = kw.matchType === "exact" ? "完全" : kw.matchType === "phrase" ? "フレーズ" : "部分";
+                      return (
                         <span
+                          key={i}
                           style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: "#fff",
-                            background: info.color,
-                            borderRadius: 3,
-                            padding: "1px 4px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            padding: "4px 10px",
+                            borderRadius: 6,
+                            background: kw.volumeRisk === "low" ? "#fef2f2" : "#f3f4f6",
+                            border: `1px solid ${kw.volumeRisk === "low" ? "#fecaca" : "#e5e7eb"}`,
+                            fontSize: 12,
+                            opacity: kw.volumeRisk === "low" ? 0.7 : 1,
                           }}
+                          title={`${kw.reason} / ${matchLabel}一致 / ボリューム${volIcon}`}
                         >
-                          {kw.score}
+                          <span style={{ fontSize: 10 }}>{volIcon}</span>
+                          {kw.keyword}
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 700,
+                              color: "#fff",
+                              background: info.color,
+                              borderRadius: 3,
+                              padding: "1px 4px",
+                            }}
+                          >
+                            {kw.score}
+                          </span>
+                          <span style={{ fontSize: 9, color: "#888" }}>{matchLabel}</span>
                         </span>
-                      </span>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );

@@ -16,6 +16,8 @@ type SuggestedKeyword = {
   category: "purchase" | "compare" | "info" | "problem";
   score: number;
   reason: string;
+  matchType?: "broad" | "phrase" | "exact";
+  volumeRisk?: "high" | "medium" | "low";
 };
 
 type UiRow = PreviewRow & {
@@ -481,8 +483,30 @@ function KeywordSuggestionSection({ raw }: { raw: any }) {
 /**
  * キーワードチップ表示
  */
+const VOLUME_ICONS: Record<string, { icon: string; label: string; color: string }> = {
+  high: { icon: "\u{1F7E2}", label: "高", color: "#16a34a" },
+  medium: { icon: "\u{1F7E1}", label: "中", color: "#ca8a04" },
+  low: { icon: "\u{1F534}", label: "低", color: "#dc2626" },
+};
+
+const MATCH_LABELS: Record<string, string> = {
+  broad: "部分一致",
+  phrase: "フレーズ一致",
+  exact: "完全一致",
+};
+
 function KeywordChip({ keyword, color }: { keyword: SuggestedKeyword; color: string }) {
   const [showDetail, setShowDetail] = useState(false);
+  const vol = VOLUME_ICONS[keyword.volumeRisk || "medium"];
+  const matchLabel = MATCH_LABELS[keyword.matchType || "broad"];
+
+  // Google Ads入稿用フォーマット
+  const adsFormat =
+    keyword.matchType === "exact"
+      ? `[${keyword.keyword}]`
+      : keyword.matchType === "phrase"
+        ? `"${keyword.keyword}"`
+        : keyword.keyword;
 
   return (
     <div style={{ position: "relative" }}>
@@ -494,21 +518,23 @@ function KeywordChip({ keyword, color }: { keyword: SuggestedKeyword; color: str
           gap: 6,
           padding: "6px 12px",
           borderRadius: 6,
-          background: "#f3f4f6",
-          border: "1px solid #e5e7eb",
+          background: keyword.volumeRisk === "low" ? "#fef2f2" : "#f3f4f6",
+          border: `1px solid ${keyword.volumeRisk === "low" ? "#fecaca" : "#e5e7eb"}`,
           cursor: "pointer",
           fontSize: 13,
           fontWeight: 500,
+          opacity: keyword.volumeRisk === "low" ? 0.7 : 1,
         }}
       >
+        <span style={{ fontSize: 10 }}>{vol.icon}</span>
         <span>{keyword.keyword}</span>
         <span
           style={{
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 24,
             height: 18,
+            padding: "0 4px",
             borderRadius: 4,
             background: color,
             color: "#fff",
@@ -527,18 +553,25 @@ function KeywordChip({ keyword, color }: { keyword: SuggestedKeyword; color: str
             top: "100%",
             left: 0,
             marginTop: 4,
-            padding: 10,
+            padding: 12,
             background: "#fff",
             borderRadius: 6,
             boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
             zIndex: 10,
-            minWidth: 200,
+            minWidth: 260,
             fontSize: 12,
           }}
         >
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>{keyword.keyword}</div>
-          <div style={{ opacity: 0.8 }}>{keyword.reason}</div>
-          <div style={{ marginTop: 6, opacity: 0.6 }}>スコア: {keyword.score}/100</div>
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>{keyword.keyword}</div>
+          <div style={{ opacity: 0.8, marginBottom: 8 }}>{keyword.reason}</div>
+          <div style={{ display: "grid", gap: 4, fontSize: 11, color: "#555" }}>
+            <div>スコア: {keyword.score}/100</div>
+            <div>推奨マッチタイプ: <strong>{matchLabel}</strong></div>
+            <div>検索ボリューム: <span style={{ color: vol.color, fontWeight: 700 }}>{vol.icon} {vol.label}</span></div>
+            <div style={{ marginTop: 4, padding: "4px 8px", background: "#f3f4f6", borderRadius: 4, fontFamily: "monospace" }}>
+              入稿用: {adsFormat}
+            </div>
+          </div>
         </div>
       )}
     </div>

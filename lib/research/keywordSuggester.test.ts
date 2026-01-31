@@ -42,7 +42,7 @@ describe("keywordSuggester", () => {
 
       const purchaseKw = result.mainKeywords.filter((k) => k.category === "purchase");
       expect(purchaseKw.length).toBeGreaterThan(0);
-      expect(purchaseKw.some((k) => k.keyword.includes("購入"))).toBe(true);
+      expect(purchaseKw.some((k) => k.keyword.includes("通販") || k.keyword.includes("安い") || k.keyword === "ペアアクセサリー")).toBe(true);
     });
 
     it("比較検討のキーワードを含む", () => {
@@ -104,10 +104,10 @@ describe("keywordSuggester", () => {
   describe("groupKeywordsByCategory", () => {
     it("カテゴリ別にグループ化する", () => {
       const keywords: SuggestedKeyword[] = [
-        { keyword: "商品 購入", category: "purchase", score: 90, reason: "test" },
-        { keyword: "商品 比較", category: "compare", score: 80, reason: "test" },
-        { keyword: "商品 とは", category: "info", score: 50, reason: "test" },
-        { keyword: "商品 問題", category: "problem", score: 60, reason: "test" },
+        { keyword: "商品 購入", category: "purchase", score: 90, reason: "test", matchType: "broad" as const, volumeRisk: "high" as const },
+        { keyword: "商品 比較", category: "compare", score: 80, reason: "test", matchType: "broad" as const, volumeRisk: "high" as const },
+        { keyword: "商品 とは", category: "info", score: 50, reason: "test", matchType: "broad" as const, volumeRisk: "high" as const },
+        { keyword: "商品 問題", category: "problem", score: 60, reason: "test", matchType: "broad" as const, volumeRisk: "high" as const },
       ];
 
       const grouped = groupKeywordsByCategory(keywords);
@@ -120,9 +120,9 @@ describe("keywordSuggester", () => {
 
     it("スコア順にソートする", () => {
       const keywords: SuggestedKeyword[] = [
-        { keyword: "低スコア", category: "purchase", score: 50, reason: "test" },
-        { keyword: "高スコア", category: "purchase", score: 90, reason: "test" },
-        { keyword: "中スコア", category: "purchase", score: 70, reason: "test" },
+        { keyword: "低スコア", category: "purchase", score: 50, reason: "test", matchType: "broad" as const, volumeRisk: "high" as const },
+        { keyword: "高スコア", category: "purchase", score: 90, reason: "test", matchType: "broad" as const, volumeRisk: "high" as const },
+        { keyword: "中スコア", category: "purchase", score: 70, reason: "test", matchType: "broad" as const, volumeRisk: "high" as const },
       ];
 
       const grouped = groupKeywordsByCategory(keywords);
@@ -163,7 +163,11 @@ describe("keywordSuggester", () => {
 
     it("ギフトカテゴリを検出する", () => {
       const scraped = createMockScrapedData({
+        title: "ギフト専門店",
+        h1: "ギフトをお探しの方へ",
+        metaDescription: "贈り物に最適なギフトアイテム。",
         bodyText: "誕生日プレゼントやギフトに最適なアイテム。",
+        keywords: ["ギフト", "贈り物"],
       });
       const result = suggestKeywords(scraped);
 

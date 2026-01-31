@@ -1,112 +1,206 @@
 /**
- * キーワード提案エンジン
- * サイト内容から商標なしの一般KWを提案
+ * キーワード提案エンジン v2
+ *
+ * 設計方針:
+ * - Google Adsで「検索ボリュームが少ない」にならない短い一般KWを優先
+ * - 1〜2語のKWをメインに、3語以上は「フレーズ一致」推奨で低ボリュームリスク表示
+ * - 商標なし（憲法準拠）
+ * - マッチタイプ推奨を付与
  */
 
 import type { ScrapedData } from "./scraper";
 import { TRADEMARK_CATEGORIES } from "./rules/trademarkRules";
+
+export type MatchType = "broad" | "phrase" | "exact";
 
 export type SuggestedKeyword = {
   keyword: string;
   category: "purchase" | "compare" | "info" | "problem";
   score: number; // 0-100 推定効果スコア
   reason: string;
+  matchType: MatchType;
+  volumeRisk: "high" | "medium" | "low"; // 検索ボリューム推定（high=ボリュームあり）
 };
 
 export type KeywordSuggestionResult = {
   mainKeywords: SuggestedKeyword[];
   longTailKeywords: SuggestedKeyword[];
-  negativeKeywords: string[]; // 除外すべきKW（商標など）
+  negativeKeywords: string[];
   summary: string;
 };
 
-// カテゴリ別のキーワードテンプレート
-const CATEGORY_TEMPLATES = {
-  // 購入意図が高いKW
+/**
+ * 検索ボリュームが存在しやすい一般KWパターン
+ * - 1語 or 2語のシンプルなKWを中心に
+ * - Google Adsで実際に配信可能なレベル
+ */
+const HIGH_VOLUME_PATTERNS: Record<string, Array<{
+  suffix: string;
+  category: "purchase" | "compare" | "info" | "problem";
+  score: number;
+  matchType: MatchType;
+  reason: string;
+}>> = {
+  // 単語のみ（最もボリュームが大きい）
+  solo: [
+    { suffix: "", category: "purchase", score: 95, matchType: "broad", reason: "最も検索ボリュームが大きい。部分一致で幅広くリーチ" },
+  ],
+  // 2語（高ボリューム帯）
   purchase: [
-    "{product} 購入",
-    "{product} 通販",
-    "{product} 安い",
-    "{product} 激安",
-    "{product} セール",
-    "{product} プレゼント",
-    "{product} ギフト",
-    "{product} 送料無料",
+    { suffix: "通販", category: "purchase", score: 90, matchType: "phrase", reason: "購入意図が明確。通販系KWは安定したボリュームがある" },
+    { suffix: "おすすめ", category: "purchase", score: 88, matchType: "phrase", reason: "購入直前の比較段階。高ボリューム" },
+    { suffix: "人気", category: "purchase", score: 87, matchType: "phrase", reason: "購入検討中のユーザー。安定ボリューム" },
+    { suffix: "安い", category: "purchase", score: 85, matchType: "phrase", reason: "価格重視の購入意図。ボリュームあり" },
+    { suffix: "プレゼント", category: "purchase", score: 84, matchType: "phrase", reason: "ギフト需要。季節変動あるが高ボリューム" },
   ],
-  // 比較検討系KW
   compare: [
-    "{product} 比較",
-    "{product} 違い",
-    "{product} どれがいい",
-    "{product} 選び方",
-    "{product} 種類",
-    "{product} メリット デメリット",
+    { suffix: "比較", category: "compare", score: 82, matchType: "phrase", reason: "比較検討段階。CV率は中程度だがボリューム安定" },
+    { suffix: "選び方", category: "compare", score: 78, matchType: "phrase", reason: "情報収集〜購入の中間。記事系LPと相性良い" },
+    { suffix: "違い", category: "compare", score: 75, matchType: "phrase", reason: "比較意図。LP内で差異を説明できれば効果的" },
   ],
-  // 情報収集系KW
-  info: [
-    "{product} とは",
-    "{product} 意味",
-    "{product} 使い方",
-    "{product} 手入れ",
-    "{product} サイズ",
-    "{product} 素材",
-  ],
-  // 悩み・課題系KW
   problem: [
-    "{product} 金属アレルギー",
-    "{product} 黒ずみ",
-    "{product} 傷",
-    "{product} サビ",
-    "{product} 変色",
-    "{product} お揃い",
-    "{product} ペア",
+    { suffix: "口コミ", category: "problem", score: 80, matchType: "phrase", reason: "購入前の不安解消。高ボリューム" },
+    { suffix: "評判", category: "problem", score: 78, matchType: "phrase", reason: "購入前の確認行動。ボリューム安定" },
   ],
-};
-
-// 商品カテゴリ別の追加KW
-const PRODUCT_CATEGORY_KEYWORDS: Record<string, string[]> = {
-  アクセサリー: ["ネックレス", "ブレスレット", "リング", "指輪", "ペンダント", "バングル"],
-  ペア: ["カップル", "恋人", "夫婦", "お揃い", "マッチング", "記念日"],
-  ギフト: ["プレゼント", "誕生日", "クリスマス", "ホワイトデー", "バレンタイン", "記念日"],
-  素材: ["ステンレス", "チタン", "シルバー", "レザー", "革"],
 };
 
 /**
- * スクレイピング結果からキーワードを提案
+ * ジャンル横断で使える高ボリューム単独KW
+ * これらは product を含まず、単独で部分一致で使える
  */
+const GENERIC_HIGH_VOLUME_KW: Record<string, Array<{
+  keyword: string;
+  category: "purchase" | "compare" | "info" | "problem";
+  score: number;
+  reason: string;
+}>> = {
+  アクセサリー: [
+    { keyword: "ペアリング", category: "purchase", score: 92, reason: "単独で月間検索数万。部分一致で高リーチ" },
+    { keyword: "ペアネックレス", category: "purchase", score: 90, reason: "単独で月間検索数千。購入意図が強い" },
+    { keyword: "ペアブレスレット", category: "purchase", score: 88, reason: "単独でボリュームあり。購入意図が強い" },
+    { keyword: "カップル アクセサリー", category: "purchase", score: 86, reason: "2語で安定ボリューム。ターゲットが明確" },
+    { keyword: "記念日 プレゼント", category: "purchase", score: 85, reason: "ギフト需要。季節問わず安定" },
+    { keyword: "ペア お揃い", category: "purchase", score: 83, reason: "2語で安定ボリューム" },
+  ],
+  ギフト: [
+    { keyword: "プレゼント 彼氏", category: "purchase", score: 91, reason: "月間検索数万。ギフト系の王道KW" },
+    { keyword: "プレゼント 彼女", category: "purchase", score: 91, reason: "月間検索数万。ギフト系の王道KW" },
+    { keyword: "誕生日プレゼント", category: "purchase", score: 90, reason: "単独で高ボリューム" },
+    { keyword: "クリスマスプレゼント", category: "purchase", score: 88, reason: "季節KWだがピーク時は超高ボリューム" },
+    { keyword: "記念日 ギフト", category: "purchase", score: 84, reason: "通年で安定したボリューム" },
+  ],
+  ファッション: [
+    { keyword: "メンズ アクセサリー", category: "purchase", score: 87, reason: "性別指定で安定ボリューム" },
+    { keyword: "レディース アクセサリー", category: "purchase", score: 87, reason: "性別指定で安定ボリューム" },
+  ],
+  素材: [
+    { keyword: "ステンレス アクセサリー", category: "info", score: 75, reason: "素材指定。アレルギー対応で需要あり" },
+    { keyword: "金属アレルギー対応", category: "problem", score: 80, reason: "悩み系で安定ボリューム。CV率も高い" },
+  ],
+};
+
 export function suggestKeywords(
   scraped: ScrapedData,
   customProductName?: string
 ): KeywordSuggestionResult {
-  // 1. サイトから商品カテゴリを推定
   const productCategories = detectProductCategories(scraped);
-
-  // 2. メインの商品名/カテゴリを決定（商標は除外）
   const mainProduct = customProductName || extractMainProduct(scraped, productCategories);
-
-  // 3. 商標キーワードを検出（除外用）
   const negativeKeywords = detectTrademarkKeywords(scraped);
 
-  // 4. メインキーワードを生成
-  const mainKeywords = generateMainKeywords(mainProduct, productCategories);
+  const mainKeywords: SuggestedKeyword[] = [];
+  const longTailKeywords: SuggestedKeyword[] = [];
 
-  // 5. ロングテールキーワードを生成
-  const longTailKeywords = generateLongTailKeywords(mainProduct, scraped, productCategories);
+  // 1. 商品名単独（部分一致）- 最もボリュームが大きい
+  for (const p of HIGH_VOLUME_PATTERNS.solo) {
+    mainKeywords.push({
+      keyword: mainProduct,
+      category: p.category,
+      score: p.score,
+      reason: p.reason,
+      matchType: p.matchType,
+      volumeRisk: "high",
+    });
+  }
 
-  // 6. サマリー生成
-  const summary = generateSummary(mainProduct, productCategories, mainKeywords.length);
+  // 2. 商品名 + 高ボリューム接尾語（2語）
+  for (const group of [HIGH_VOLUME_PATTERNS.purchase, HIGH_VOLUME_PATTERNS.compare, HIGH_VOLUME_PATTERNS.problem]) {
+    for (const p of group) {
+      mainKeywords.push({
+        keyword: `${mainProduct} ${p.suffix}`,
+        category: p.category,
+        score: p.score,
+        reason: p.reason,
+        matchType: p.matchType,
+        volumeRisk: estimateVolumeRisk(mainProduct, p.suffix),
+      });
+    }
+  }
+
+  // 3. ジャンル別の高ボリューム単独KW
+  for (const cat of productCategories) {
+    const generics = GENERIC_HIGH_VOLUME_KW[cat] || [];
+    for (const g of generics) {
+      // 商標チェック
+      if (negativeKeywords.some((neg) => g.keyword.toLowerCase().includes(neg.toLowerCase()))) continue;
+
+      longTailKeywords.push({
+        keyword: g.keyword,
+        category: g.category,
+        score: g.score,
+        reason: g.reason,
+        matchType: g.keyword.includes(" ") ? "phrase" : "broad",
+        volumeRisk: g.keyword.includes(" ") ? "medium" : "high",
+      });
+    }
+  }
+
+  // 重複排除
+  const seen = new Set<string>();
+  const dedup = (arr: SuggestedKeyword[]) =>
+    arr.filter((kw) => {
+      const k = kw.keyword.toLowerCase().trim();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+  const dedupedMain = dedup(mainKeywords);
+  const dedupedLong = dedup(longTailKeywords);
+
+  const summary = [
+    `「${mainProduct}」の広告配信用キーワードを提案。`,
+    `部分一致・フレーズ一致を推奨（完全一致は低ボリュームリスクあり）。`,
+    `商標KWは除外済み。`,
+    `ボリューム: 🟢高 🟡中 🔴低`,
+  ].join(" ");
 
   return {
-    mainKeywords,
-    longTailKeywords,
+    mainKeywords: dedupedMain,
+    longTailKeywords: dedupedLong,
     negativeKeywords,
     summary,
   };
 }
 
 /**
- * サイト内容から商品カテゴリを検出
+ * 検索ボリュームリスク推定
+ * - 1語: high（ほぼ確実にボリュームあり）
+ * - 2語: medium〜high（一般的な組み合わせならボリュームあり）
+ * - 3語以上: low（低ボリュームリスク高い）
  */
+function estimateVolumeRisk(product: string, suffix: string): "high" | "medium" | "low" {
+  const combined = `${product} ${suffix}`.trim();
+  const wordCount = combined.split(/\s+/).length;
+
+  if (wordCount <= 1) return "high";
+  if (wordCount === 2) {
+    // 短い商品名 + 一般的接尾語なら high
+    if (product.length <= 6) return "high";
+    return "medium";
+  }
+  return "low";
+}
+
 function detectProductCategories(scraped: ScrapedData): string[] {
   const text = [
     scraped.title,
@@ -117,7 +211,6 @@ function detectProductCategories(scraped: ScrapedData): string[] {
 
   const detected: string[] = [];
 
-  // カテゴリ検出ルール
   const categoryRules: Record<string, string[]> = {
     アクセサリー: ["アクセサリー", "ジュエリー", "ネックレス", "ブレスレット", "リング", "指輪"],
     ペア: ["ペア", "カップル", "お揃い", "二人"],
@@ -140,14 +233,7 @@ function detectProductCategories(scraped: ScrapedData): string[] {
   return detected.length > 0 ? detected : ["商品"];
 }
 
-/**
- * メイン商品名を抽出（商標除外）
- */
 function extractMainProduct(scraped: ScrapedData, categories: string[]): string {
-  // タイトルやH1から商品名を抽出
-  const candidates: string[] = [];
-
-  // カテゴリベースで商品名を決定
   if (categories.includes("ペア") && categories.includes("アクセサリー")) {
     return "ペアアクセサリー";
   }
@@ -155,26 +241,17 @@ function extractMainProduct(scraped: ScrapedData, categories: string[]): string 
     return "アクセサリー";
   }
 
-  // キーワードから抽出
   if (scraped.keywords && scraped.keywords.length > 0) {
     for (const kw of scraped.keywords) {
-      if (!isTrademarkWord(kw) && kw.length >= 2 && kw.length <= 10) {
-        candidates.push(kw);
+      if (!isTrademarkWord(kw) && kw.length >= 2 && kw.length <= 6) {
+        return kw;
       }
     }
   }
 
-  if (candidates.length > 0) {
-    return candidates[0];
-  }
-
-  // フォールバック
   return categories[0] || "商品";
 }
 
-/**
- * 商標キーワードを検出
- */
 function detectTrademarkKeywords(scraped: ScrapedData): string[] {
   const text = [
     scraped.title,
@@ -198,9 +275,6 @@ function detectTrademarkKeywords(scraped: ScrapedData): string[] {
   return found;
 }
 
-/**
- * 単語が商標かどうか判定
- */
 function isTrademarkWord(word: string): boolean {
   const w = word.toLowerCase();
   for (const category of TRADEMARK_CATEGORIES) {
@@ -211,105 +285,6 @@ function isTrademarkWord(word: string): boolean {
     }
   }
   return false;
-}
-
-/**
- * メインキーワードを生成
- */
-function generateMainKeywords(
-  mainProduct: string,
-  categories: string[]
-): SuggestedKeyword[] {
-  const keywords: SuggestedKeyword[] = [];
-
-  // 購入意図KW（スコア高）
-  const purchaseTemplates = CATEGORY_TEMPLATES.purchase;
-  for (const template of purchaseTemplates.slice(0, 4)) {
-    const kw = template.replace("{product}", mainProduct);
-    keywords.push({
-      keyword: kw,
-      category: "purchase",
-      score: 85 + Math.floor(Math.random() * 10),
-      reason: "購入意図が高く、CV率が期待できる",
-    });
-  }
-
-  // 比較検討KW
-  const compareTemplates = CATEGORY_TEMPLATES.compare;
-  for (const template of compareTemplates.slice(0, 3)) {
-    const kw = template.replace("{product}", mainProduct);
-    keywords.push({
-      keyword: kw,
-      category: "compare",
-      score: 70 + Math.floor(Math.random() * 15),
-      reason: "比較検討段階のユーザーを獲得",
-    });
-  }
-
-  return keywords;
-}
-
-/**
- * ロングテールキーワードを生成
- */
-function generateLongTailKeywords(
-  mainProduct: string,
-  scraped: ScrapedData,
-  categories: string[]
-): SuggestedKeyword[] {
-  const keywords: SuggestedKeyword[] = [];
-
-  // カテゴリ別の追加ワードを組み合わせ
-  for (const category of categories) {
-    const additionalWords = PRODUCT_CATEGORY_KEYWORDS[category] || [];
-    for (const word of additionalWords.slice(0, 3)) {
-      // 悩み系KW
-      keywords.push({
-        keyword: `${mainProduct} ${word}`,
-        category: "info",
-        score: 55 + Math.floor(Math.random() * 20),
-        reason: `${word}に関心のあるユーザーを獲得`,
-      });
-    }
-  }
-
-  // 悩み・課題系KW
-  const problemTemplates = CATEGORY_TEMPLATES.problem;
-  for (const template of problemTemplates.slice(0, 4)) {
-    const kw = template.replace("{product}", mainProduct);
-    keywords.push({
-      keyword: kw,
-      category: "problem",
-      score: 60 + Math.floor(Math.random() * 15),
-      reason: "課題解決を求めるユーザーを獲得",
-    });
-  }
-
-  // 情報収集系KW
-  const infoTemplates = CATEGORY_TEMPLATES.info;
-  for (const template of infoTemplates.slice(0, 3)) {
-    const kw = template.replace("{product}", mainProduct);
-    keywords.push({
-      keyword: kw,
-      category: "info",
-      score: 45 + Math.floor(Math.random() * 15),
-      reason: "認知拡大・情報収集層へのアプローチ",
-    });
-  }
-
-  return keywords;
-}
-
-/**
- * サマリーを生成
- */
-function generateSummary(
-  mainProduct: string,
-  categories: string[],
-  keywordCount: number
-): string {
-  const categoryText = categories.join("・");
-  return `「${mainProduct}」（${categoryText}カテゴリ）に関連する${keywordCount}件のキーワードを提案しました。購入意図の高いKWを優先的に提案しています。商標を含むKWは除外済みです。`;
 }
 
 /**
@@ -331,7 +306,6 @@ export function groupKeywordsByCategory(
     }
   }
 
-  // スコア順にソート
   for (const key of Object.keys(groups)) {
     groups[key].sort((a, b) => b.score - a.score);
   }
