@@ -44,7 +44,6 @@ const templates = [
   { key: "adDescription1", label: "広告説明文1", type: "text" },
   { key: "adDescription2", label: "広告説明文2", type: "text" },
 
-  { key: "suggestedKeywords", label: "キーワード提案(JSON)", type: "note" },
   { key: "extractedKeywords", label: "抽出キーワード", type: "text" },
 
   { key: "notes", label: "メモ", type: "note" },
