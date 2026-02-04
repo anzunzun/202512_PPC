@@ -1,10 +1,13 @@
 "use client";
 
 import { A8Program } from "@prisma/client";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 interface Props {
   programs: A8Program[];
   deleteAction: (id: string) => Promise<void>;
+  createProjectAction: (a8ProgramId: string) => Promise<{ projectId: string }>;
 }
 
 function getScoreColor(score: number | null): string {
@@ -23,7 +26,22 @@ function getScoreLabel(score: number | null): string {
   return "要検討";
 }
 
-export default function A8ProgramList({ programs, deleteAction }: Props) {
+export default function A8ProgramList({ programs, deleteAction, createProjectAction }: Props) {
+  const router = useRouter();
+  const [creating, setCreating] = useState<string | null>(null);
+
+  async function handleCreateProject(programId: string) {
+    if (creating) return;
+    setCreating(programId);
+    try {
+      const { projectId } = await createProjectAction(programId);
+      router.push(`/projects/${projectId}`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "プロジェクト作成に失敗しました");
+      setCreating(null);
+    }
+  }
+
   if (programs.length === 0) {
     return (
       <p style={{ color: "#666", textAlign: "center", padding: "40px" }}>
@@ -116,7 +134,24 @@ export default function A8ProgramList({ programs, deleteAction }: Props) {
             </div>
           </div>
 
-          <div style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
+          <div style={{ marginTop: "12px", display: "flex", gap: "12px", alignItems: "center" }}>
+            <button
+              onClick={() => handleCreateProject(program.id)}
+              disabled={creating === program.id}
+              style={{
+                padding: "6px 12px",
+                background: "#0066cc",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                fontSize: "12px",
+                fontWeight: "bold",
+                cursor: creating === program.id ? "wait" : "pointer",
+                opacity: creating === program.id ? 0.7 : 1,
+              }}
+            >
+              {creating === program.id ? "作成中..." : "プロジェクト作成"}
+            </button>
             {program.lpUrl && (
               <a
                 href={program.lpUrl}

@@ -173,4 +173,60 @@ describe("bridgePageRules", () => {
       expect(result.reasons).toContain("meta refresh検出");
     });
   });
+
+  describe("エッジケース", () => {
+    it("nullのscrapedDataでもクラッシュしない", () => {
+      const scraped = createMockScrapedData({ fetchError: "Connection failed" });
+      const result = calcBridgePageRisk(scraped);
+      expect(result.score).toBeGreaterThanOrEqual(0);
+    });
+
+    it("wordCountが0でもクラッシュしない", () => {
+      const scraped = createMockScrapedData({ wordCount: 0, bodyText: "" });
+      const result = calcBridgePageRisk(scraped);
+      expect(result.score).toBeGreaterThanOrEqual(30); // コンテンツが少ないとスコア上昇
+    });
+
+    it("非常に長いbodyTextでもクラッシュしない", () => {
+      const scraped = createMockScrapedData({
+        bodyText: "長いコンテンツ".repeat(10000),
+        wordCount: 100000,
+      });
+      const result = calcBridgePageRisk(scraped);
+      expect(result.score).toBeGreaterThanOrEqual(0);
+    });
+  });
+
+  describe("憲法準拠（案件差し替え耐性）", () => {
+    it("十分なコンテンツがあればブリッジページと判定されない", () => {
+      const scraped = createMockScrapedData({
+        wordCount: 1000,
+        bodyText: "商品Aと商品Bを比較しました。それぞれの特徴、価格、口コミを詳しく解説します。".repeat(100),
+        internalLinkCount: 5,
+        externalLinkCount: 3,
+        hasRedirectScript: false,
+        hasIframe: false,
+      });
+      const result = calcBridgePageRisk(scraped);
+      expect(result.level).toBe("low");
+    });
+
+    it("比較コンテンツは低リスク", () => {
+      const scraped = createMockScrapedData({
+        title: "商品比較ガイド",
+        h1: "あなたに合った商品の選び方",
+        bodyText: `
+          商品を選ぶ際のポイントを解説します。
+          1. 価格で選ぶ
+          2. 機能で選ぶ
+          3. 口コミで選ぶ
+          それぞれの商品には特徴があります。
+          自分に合った商品を見つけましょう。
+        `.repeat(50),
+        wordCount: 800,
+      });
+      const result = calcBridgePageRisk(scraped);
+      expect(result.score).toBeLessThan(30);
+    });
+  });
 });

@@ -79,4 +79,66 @@ describe("adPolicyRules", () => {
       expect(score).toBeLessThanOrEqual(100);
     });
   });
+
+  describe("エッジケース", () => {
+    it("空文字列はスコア0を返す", () => {
+      const result = calcAdPolicyRisk("", "https://example.com");
+      expect(result.score).toBe(0);
+      expect(result.level).toBe("low");
+    });
+
+    it("空白のみはスコア0を返す", () => {
+      const result = calcAdPolicyRisk("   　　\n\t", "https://example.com");
+      expect(result.score).toBe(0);
+    });
+
+    it("数字のみはスコア0を返す", () => {
+      const result = calcAdPolicyRisk("12345678901234567890", "https://example.com");
+      expect(result.score).toBe(0);
+    });
+
+    it("URLが空でもエラーにならない", () => {
+      const result = calcAdPolicyRisk("確実に効果がある", "");
+      expect(result.score).toBeGreaterThan(0);
+      expect(result.urlRisks).toHaveLength(0);
+    });
+
+    it("非常に長いテキストでもクラッシュしない", () => {
+      const longText = "普通の文章です。".repeat(1000);
+      const result = calcAdPolicyRisk(longText, "https://example.com");
+      expect(result.score).toBe(0);
+    });
+
+    it("部分一致しない（確→確実 にならない）", () => {
+      const result = calcAdPolicyRisk("これは確かな情報です", "https://example.com");
+      // 「確実」は含まれていないので、スコアは低いはず
+      expect(result.matchedCategories.some((c) => c.matchedWords.includes("確実"))).toBe(false);
+    });
+
+    it("大文字小文字を区別しない", () => {
+      const result = calcAdPolicyRisk("BIT.LYのリンクです", "https://BIT.LY/test");
+      expect(result.urlRisks).toContain("短縮URL");
+    });
+  });
+
+  describe("Google広告ポリシー具体例", () => {
+    it("効果保証ワードを含むとリスク", () => {
+      // 「治る」「効く」などの健康誇大ワードを使用
+      const result = calcAdPolicyRisk("このサプリで確実に効果が出る", "https://example.com");
+      expect(result.score).toBeGreaterThan(0);
+      expect(result.matchedCategories.length).toBeGreaterThan(0);
+    });
+
+    it("収益誇張ワードを含むとリスク", () => {
+      // 「稼げる」「簡単に」などの収益誇張ワードを使用
+      const result = calcAdPolicyRisk("誰でも簡単に稼げる", "https://example.com");
+      expect(result.score).toBeGreaterThan(0);
+      expect(result.matchedCategories.some((c) => c.name === "収益誇張")).toBe(true);
+    });
+
+    it("比較・レビュー系の表現は低リスク", () => {
+      const result = calcAdPolicyRisk("各商品を比較してみました。口コミも紹介します。", "https://example.com");
+      expect(result.score).toBeLessThan(20);
+    });
+  });
 });

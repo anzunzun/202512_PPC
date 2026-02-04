@@ -12,6 +12,8 @@ model ResearchProject {
   country         String
   genre           String
   status          String
+  a8ProgramId     String?               // A8案件との紐付け
+  a8Program       A8Program?            @relation(fields: [a8ProgramId], references: [id])
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
   competitorSites CompetitorSite[]
@@ -19,6 +21,8 @@ model ResearchProject {
   templateItems   ResearchProjectItem[]
   researchRuns    ResearchRun[]
   riskScore       RiskScore?
+
+  @@index([a8ProgramId])
 }
 
 model ResearchItem {
@@ -119,22 +123,23 @@ enum ItemType {
 }
 
 model A8Program {
-  id             String   @id @default(cuid())
-  programId      String?  // A8の案件ID（任意）
-  programName    String   // 案件名
-  advertiserName String?  // 広告主名
-  category       String   // カテゴリ
-  reward         Int      // 報酬単価（円）
-  rewardType     String   @default("fixed") // fixed: 定額, percent: 定率
-  approvalRate   Float?   // 承認率（0-100）
-  epc            Float?   // EPC（円）
-  cookieDays     Int?     // Cookie有効日数
-  notes          String?  // メモ
-  lpUrl          String?  // LP URL
-  profitScore    Float?   // 収益性スコア（計算値）
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id             String            @id @default(cuid())
+  programId      String?           // A8の案件ID（任意）
+  programName    String            // 案件名
+  advertiserName String?           // 広告主名
+  category       String            // カテゴリ
+  reward         Int               // 報酬単価（円）
+  rewardType     String            @default("fixed") // fixed: 定額, percent: 定率
+  approvalRate   Float?            // 承認率（0-100）
+  epc            Float?            // EPC（円）
+  cookieDays     Int?              // Cookie有効日数
+  notes          String?           // メモ
+  lpUrl          String?           // LP URL
+  profitScore    Float?            // 収益性スコア（計算値）
+  isActive       Boolean           @default(true)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  projects       ResearchProject[] // このA8案件から作成されたプロジェクト
 
   @@index([category])
   @@index([profitScore])

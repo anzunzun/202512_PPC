@@ -64,4 +64,62 @@ describe("trademarkRules", () => {
       expect(score).toBeLessThanOrEqual(100);
     });
   });
+
+  describe("エッジケース", () => {
+    it("空文字列はスコアが低い", () => {
+      const result = calcTrademarkRisk("", "https://example.com");
+      // URLのベーススコアがあるため完全に0にはならない
+      expect(result.score).toBeLessThanOrEqual(30);
+      expect(result.matchedTrademarks).toHaveLength(0);
+    });
+
+    it("空白のみはスコアが低い", () => {
+      const result = calcTrademarkRisk("   　　\n\t", "https://example.com");
+      expect(result.score).toBeLessThanOrEqual(30);
+    });
+
+    it("URLが空でもエラーにならない", () => {
+      const result = calcTrademarkRisk("Google広告", "");
+      expect(result.score).toBeGreaterThan(0);
+    });
+
+    it("非常に長いテキストでもクラッシュしない", () => {
+      const longText = "普通の文章です。".repeat(1000);
+      const result = calcTrademarkRisk(longText, "https://example.com");
+      // 商標が含まれていなければ低スコア
+      expect(result.matchedTrademarks).toHaveLength(0);
+    });
+
+    it("商標の一部だけでは検出しない", () => {
+      // 「gle」だけではGoogleと検出しない
+      const result = calcTrademarkRisk("gle ogle", "https://example.com");
+      expect(result.matchedTrademarks.some((m) => m.trademark === "Google")).toBe(false);
+    });
+
+    it("大文字小文字を区別しない", () => {
+      const lower = calcTrademarkRisk("google", "https://example.com");
+      const upper = calcTrademarkRisk("GOOGLE", "https://example.com");
+      const mixed = calcTrademarkRisk("GoOgLe", "https://example.com");
+      expect(lower.matchedTrademarks.length).toBe(upper.matchedTrademarks.length);
+      expect(lower.matchedTrademarks.length).toBe(mixed.matchedTrademarks.length);
+    });
+  });
+
+  describe("憲法準拠（商標ゼロ構成）", () => {
+    it("一般的な比較表現は商標検出なし", () => {
+      const result = calcTrademarkRisk("商品Aと商品Bを比較してみました", "https://example.com");
+      expect(result.matchedTrademarks).toHaveLength(0);
+    });
+
+    it("「公式」という言葉自体は商標ではない", () => {
+      const result = calcTrademarkRisk("公式サイトで購入できます", "https://example.com");
+      // 具体的な商標名がなければ商標検出なし
+      expect(result.matchedTrademarks).toHaveLength(0);
+    });
+
+    it("ジェネリック名は商標検出なし", () => {
+      const result = calcTrademarkRisk("ダイエットサプリ 比較 おすすめ", "https://example.com");
+      expect(result.matchedTrademarks).toHaveLength(0);
+    });
+  });
 });

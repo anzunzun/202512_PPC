@@ -137,3 +137,64 @@ export async function recalculateAllScores() {
 
   revalidatePath("/a8-finder");
 }
+
+// A8案件からプロジェクトを作成
+export async function createProjectFromA8Program(a8ProgramId: string) {
+  const program = await prisma.a8Program.findUnique({
+    where: { id: a8ProgramId },
+  });
+
+  if (!program) {
+    throw new Error("A8案件が見つかりません");
+  }
+
+  // プロジェクト作成
+  const project = await prisma.researchProject.create({
+    data: {
+      country: "JP",
+      genre: program.category,
+      status: "draft",
+      a8ProgramId: program.id,
+    },
+  });
+
+  // referenceUrl テンプレートを取得して値を設定
+  if (program.lpUrl) {
+    const refUrlTemplate = await prisma.researchItemTemplate.findFirst({
+      where: { scope: "PPC", key: "referenceUrl", isActive: true },
+    });
+
+    if (refUrlTemplate) {
+      await prisma.researchProjectItem.create({
+        data: {
+          projectId: project.id,
+          templateId: refUrlTemplate.id,
+          value: program.lpUrl,
+        },
+      });
+    }
+  }
+
+  revalidatePath("/a8-finder");
+  revalidatePath("/projects");
+
+  return { projectId: project.id };
+}
+
+// A8案件の詳細を取得（プロジェクト数含む）
+export async function getA8ProgramWithProjects(id: string) {
+  return prisma.a8Program.findUnique({
+    where: { id },
+    include: {
+      projects: {
+        select: {
+          id: true,
+          genre: true,
+          status: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+}

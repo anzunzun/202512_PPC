@@ -1,4 +1,4 @@
-import { getA8Programs, createA8Program, deleteA8Program } from "@/app/actions/a8program";
+import { getA8Programs, createA8Program, deleteA8Program, createProjectFromA8Program } from "@/app/actions/a8program";
 import A8ProgramForm from "./A8ProgramForm";
 import A8ProgramList from "./A8ProgramList";
 
@@ -9,7 +9,7 @@ export default async function A8FinderPage() {
     <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
       <h1 style={{ marginBottom: "8px" }}>A8案件ファインダー</h1>
       <p style={{ color: "#666", marginBottom: "24px" }}>
-        案件情報を入力して収益性スコアを自動計算
+        案件情報を入力して収益性スコアを自動計算 → プロジェクト作成
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "400px 1fr", gap: "32px" }}>
@@ -22,7 +22,11 @@ export default async function A8FinderPage() {
           <h2 style={{ fontSize: "18px", marginBottom: "16px" }}>
             登録案件一覧（スコア順）
           </h2>
-          <A8ProgramList programs={programs} deleteAction={deleteA8Program} />
+          <A8ProgramList
+            programs={programs}
+            deleteAction={deleteA8Program}
+            createProjectAction={createProjectFromA8Program}
+          />
         </div>
       </div>
 

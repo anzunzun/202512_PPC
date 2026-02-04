@@ -71,6 +71,12 @@ export default async function ProjectDetailPage({
           >
             テンプレkey
           </Link>
+          <Link
+            href={`/projects/${id}/generate-lp`}
+            style={{ color: "#22c55e", textDecoration: "underline", fontWeight: 700 }}
+          >
+            LP生成
+          </Link>
         </div>
       </div>
 
