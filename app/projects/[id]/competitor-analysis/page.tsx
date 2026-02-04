@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CompetitorAnalysisClient from "./CompetitorAnalysisClient";
+import { getCompetitorAnalysisResults } from "@/app/actions/competitorAnalysis";
 
 export default async function CompetitorAnalysisPage({
   params,
@@ -7,6 +8,16 @@ export default async function CompetitorAnalysisPage({
   params: { id: string };
 }) {
   const projectId = params.id;
+  const savedAnalyses = await getCompetitorAnalysisResults(projectId);
+
+  // スコアをパースしてクライアントに渡す
+  const formattedAnalyses = savedAnalyses.map(a => ({
+    id: a.id,
+    url: a.url,
+    title: a.title,
+    scores: a.scores as { ctaVisibility: number; contentDepth: number; trustBuilding: number; urgencyLevel: number; overall: number },
+    analyzedAt: a.analyzedAt,
+  }));
 
   return (
     <div style={{ padding: 20, maxWidth: 1200, margin: "0 auto" }}>
@@ -23,11 +34,11 @@ export default async function CompetitorAnalysisPage({
         </div>
         <p style={{ margin: 0, fontSize: 13, color: "#1e40af" }}>
           同ジャンルの競合LPを分析して、CTA配置、コンテンツ構成、訴求ポイントを把握します。
-          自分のLPの改善点を発見できます。
+          自分のLPの改善点を発見できます。分析結果は自動的に保存されます。
         </p>
       </div>
 
-      <CompetitorAnalysisClient projectId={projectId} />
+      <CompetitorAnalysisClient projectId={projectId} savedAnalyses={formattedAnalyses} />
     </div>
   );
 }

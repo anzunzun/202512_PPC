@@ -167,7 +167,8 @@ export async function analyzeLp(url: string): Promise<LpStructure> {
   };
 }
 
-function extractCtaTexts(html: string): string[] {
+// テスト用にエクスポート
+export function extractCtaTexts(html: string): string[] {
   const results: string[] = [];
 
   // ボタン・リンクテキストを抽出
@@ -188,7 +189,7 @@ function extractCtaTexts(html: string): string[] {
   return results;
 }
 
-function extractHeadings(html: string): string[] {
+export function extractHeadings(html: string): string[] {
   const results: string[] = [];
   const matches = html.match(/<h[1-6][^>]*>([^<]+)<\/h[1-6]>/gi) || [];
 
@@ -205,7 +206,7 @@ function extractHeadings(html: string): string[] {
   return results;
 }
 
-function extractAppealPoints(text: string): string[] {
+export function extractAppealPoints(text: string): string[] {
   const results: string[] = [];
 
   for (const pattern of APPEAL_PATTERNS) {
@@ -221,7 +222,7 @@ function extractAppealPoints(text: string): string[] {
   return results;
 }
 
-function extractByPatterns(text: string, patterns: RegExp[]): string[] {
+export function extractByPatterns(text: string, patterns: RegExp[]): string[] {
   const results: string[] = [];
 
   for (const pattern of patterns) {
@@ -234,7 +235,7 @@ function extractByPatterns(text: string, patterns: RegExp[]): string[] {
   return results;
 }
 
-function calculateScores(data: {
+export function calculateScores(data: {
   ctaCount: number;
   hasFloatingCta: boolean;
   wordCount: number;

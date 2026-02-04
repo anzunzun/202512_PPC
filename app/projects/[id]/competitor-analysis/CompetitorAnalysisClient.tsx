@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { analyzeMultipleLps } from "@/app/actions/competitorAnalysis";
+import { analyzeAndSaveMultipleLps, deleteCompetitorAnalysisResult } from "@/app/actions/competitorAnalysis";
 import type { LpStructure } from "@/lib/research/competitorAnalyzer";
 
 type AnalysisResult = {
@@ -11,13 +11,30 @@ type AnalysisResult = {
     improvements: string[];
     avgScores: LpStructure["scores"];
   };
+  savedCount?: number;
 };
 
-export default function CompetitorAnalysisClient({ projectId }: { projectId: string }) {
+type SavedAnalysis = {
+  id: string;
+  url: string;
+  title: string | null;
+  scores: LpStructure["scores"];
+  analyzedAt: Date;
+};
+
+export default function CompetitorAnalysisClient({
+  projectId,
+  savedAnalyses: initialSavedAnalyses,
+}: {
+  projectId: string;
+  savedAnalyses: SavedAnalysis[];
+}) {
   const [isPending, startTransition] = useTransition();
   const [urls, setUrls] = useState<string[]>(["", "", ""]);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [savedAnalyses, setSavedAnalyses] = useState<SavedAnalysis[]>(initialSavedAnalyses);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   function updateUrl(index: number, value: string) {
     const newUrls = [...urls];
@@ -31,7 +48,7 @@ export default function CompetitorAnalysisClient({ projectId }: { projectId: str
     }
   }
 
-  function analyze() {
+  function analyzeAndSave() {
     const validUrls = urls.filter(u => u.trim());
     if (validUrls.length === 0) {
       setError("URLを入力してください");
@@ -41,19 +58,96 @@ export default function CompetitorAnalysisClient({ projectId }: { projectId: str
     startTransition(async () => {
       try {
         setError(null);
-        const result = await analyzeMultipleLps(validUrls);
+        setSaveMessage(null);
+        const result = await analyzeAndSaveMultipleLps(projectId, validUrls);
         setAnalysis(result);
+        setSaveMessage(`${result.savedCount}件の分析結果を保存しました`);
+        // ページをリロードして保存済み一覧を更新
+        window.location.reload();
       } catch (e) {
         setError(e instanceof Error ? e.message : "分析に失敗しました");
       }
     });
   }
 
+  async function handleDelete(id: string) {
+    if (!confirm("この分析結果を削除しますか？")) return;
+    try {
+      await deleteCompetitorAnalysisResult(id, projectId);
+      setSavedAnalyses(prev => prev.filter(a => a.id !== id));
+    } catch (e) {
+      setError("削除に失敗しました");
+    }
+  }
+
   return (
     <div>
+      {/* 保存済み分析結果 */}
+      {savedAnalyses.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <h2 style={{ fontSize: 16, marginBottom: 12 }}>保存済み分析結果（{savedAnalyses.length}件）</h2>
+          <div style={{ display: "grid", gap: 8 }}>
+            {savedAnalyses.map(sa => (
+              <div
+                key={sa.id}
+                style={{
+                  padding: 12,
+                  background: "#f9fafb",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 8,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{sa.title || "(タイトルなし)"}</div>
+                  <div style={{ fontSize: 11, color: "#666" }}>{sa.url}</div>
+                  <div style={{ fontSize: 10, color: "#999", marginTop: 4 }}>
+                    分析日: {new Date(sa.analyzedAt).toLocaleDateString("ja-JP")}
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      background: sa.scores.overall >= 70 ? "#22c55e" : sa.scores.overall >= 40 ? "#eab308" : "#ef4444",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      fontWeight: 700,
+                      fontSize: 14,
+                    }}
+                  >
+                    {sa.scores.overall}
+                  </div>
+                  <button
+                    onClick={() => handleDelete(sa.id)}
+                    style={{
+                      padding: "4px 8px",
+                      background: "#fee2e2",
+                      border: "1px solid #fecaca",
+                      borderRadius: 4,
+                      color: "#991b1b",
+                      fontSize: 11,
+                      cursor: "pointer",
+                    }}
+                  >
+                    削除
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* URL入力 */}
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>競合LP URL（最大5件）</h2>
+        <h2 style={{ fontSize: 16, marginBottom: 12 }}>新規分析（最大5件）</h2>
         <div style={{ display: "grid", gap: 8 }}>
           {urls.map((url, i) => (
             <input
@@ -87,7 +181,7 @@ export default function CompetitorAnalysisClient({ projectId }: { projectId: str
             </button>
           )}
           <button
-            onClick={analyze}
+            onClick={analyzeAndSave}
             disabled={isPending}
             style={{
               padding: "10px 24px",
@@ -99,7 +193,7 @@ export default function CompetitorAnalysisClient({ projectId }: { projectId: str
               cursor: isPending ? "wait" : "pointer",
             }}
           >
-            {isPending ? "分析中..." : "分析開始"}
+            {isPending ? "分析中..." : "分析して保存"}
           </button>
         </div>
       </div>
@@ -107,6 +201,12 @@ export default function CompetitorAnalysisClient({ projectId }: { projectId: str
       {error && (
         <div style={{ padding: 12, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, marginBottom: 20, color: "#991b1b" }}>
           {error}
+        </div>
+      )}
+
+      {saveMessage && (
+        <div style={{ padding: 12, background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 8, marginBottom: 20, color: "#166534" }}>
+          {saveMessage}
         </div>
       )}
 

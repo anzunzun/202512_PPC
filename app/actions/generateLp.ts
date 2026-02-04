@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import type { LpStructure } from "@/lib/research/competitorAnalyzer";
 
 type LpData = {
   title: string;
@@ -10,7 +11,66 @@ type LpData = {
   ctaUrl: string;
   ctaText: string;
   category: string;
+  // 競合分析から取得したインサイト
+  competitorInsights?: {
+    popularCtaTexts: string[];
+    trustSignals: string[];
+    hasFloatingCta: boolean;
+    hasFaq: boolean;
+    hasComparisonTable: boolean;
+    avgOverallScore: number;
+  };
 };
+
+// 競合分析からインサイトを抽出
+async function getCompetitorInsights(projectId: string) {
+  const analyses = await prisma.competitorAnalysisResult.findMany({
+    where: { projectId, fetchError: null },
+    orderBy: { analyzedAt: "desc" },
+    take: 10,
+  });
+
+  if (analyses.length === 0) return undefined;
+
+  // CTAテキストの頻度をカウント
+  const ctaCounts = new Map<string, number>();
+  for (const a of analyses) {
+    const ctaTexts = a.ctaTexts as string[];
+    for (const cta of ctaTexts) {
+      ctaCounts.set(cta, (ctaCounts.get(cta) || 0) + 1);
+    }
+  }
+  const popularCtaTexts = [...ctaCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([text]) => text);
+
+  // 信頼シグナルを収集
+  const allTrustSignals = analyses.flatMap(a => a.trustSignals as string[]);
+  const uniqueTrustSignals = [...new Set(allTrustSignals)].slice(0, 5);
+
+  // 機能フラグの統計
+  const hasFloatingCta = analyses.filter(a => a.hasFloatingCta).length > analyses.length / 2;
+  const hasFaq = analyses.filter(a => a.hasFaq).length > analyses.length / 2;
+  const hasComparisonTable = analyses.filter(a => a.hasComparisonTable).length > analyses.length / 2;
+
+  // 平均スコア
+  const avgOverallScore = Math.round(
+    analyses.reduce((sum, a) => {
+      const scores = a.scores as LpStructure["scores"];
+      return sum + scores.overall;
+    }, 0) / analyses.length
+  );
+
+  return {
+    popularCtaTexts,
+    trustSignals: uniqueTrustSignals,
+    hasFloatingCta,
+    hasFaq,
+    hasComparisonTable,
+    avgOverallScore,
+  };
+}
 
 // プロジェクトのリサーチ結果からLP用データを抽出
 export async function extractLpData(projectId: string): Promise<LpData | null> {
@@ -45,14 +105,30 @@ export async function extractLpData(projectId: string): Promise<LpData | null> {
   // CTAリンク（A8案件のLP URLまたは参照URL）
   const ctaUrl = project?.a8Program?.lpUrl || itemsByKey.referenceUrl || "#";
 
+  // 競合分析インサイトを取得
+  const competitorInsights = await getCompetitorInsights(projectId);
+
+  // CTAテキストを競合分析から決定（競合で人気のあるものを優先）
+  let ctaText = "詳しく見る";
+  if (competitorInsights?.popularCtaTexts.length) {
+    // 「公式」を含まないCTAを優先（憲法準拠）
+    const safeCta = competitorInsights.popularCtaTexts.find(
+      cta => !cta.includes("公式") && !cta.includes("オフィシャル")
+    );
+    if (safeCta) {
+      ctaText = safeCta;
+    }
+  }
+
   return {
     title: itemsByKey.pageTitle || itemsByKey.targetKw || "比較ガイド",
     subtitle: itemsByKey.pageDescription || "あなたに合った選択を",
     valueProposition: itemsByKey.adDescription1 || "比較して選ぶ",
     features: features.slice(0, 6),
     ctaUrl,
-    ctaText: "詳しく見る",
+    ctaText,
     category: project?.genre || "比較",
+    competitorInsights,
   };
 }
 
@@ -67,6 +143,40 @@ export async function generateLpHtml(projectId: string): Promise<string> {
   const featuresHtml = data.features
     .map((f) => `      <li><span class="ck">✓</span> ${escapeHtml(f)}</li>`)
     .join("\n");
+
+  // 競合分析インサイトに基づくセクション生成
+  const insights = data.competitorInsights;
+
+  // 信頼シグナルセクション（競合が使用している場合）
+  const trustSignalsHtml = insights?.trustSignals.length
+    ? `
+<!-- 信頼シグナル（競合分析より） -->
+<div class="lp-trust">
+  <h3>選ばれる理由</h3>
+  <div class="trust-items">
+${insights.trustSignals.map(ts => `    <span class="trust-badge">${escapeHtml(ts)}</span>`).join("\n")}
+  </div>
+</div>
+`
+    : "";
+
+  // FAQセクション（競合の過半数が使用している場合）
+  const faqHtml = insights?.hasFaq
+    ? `
+<!-- FAQ（競合分析推奨） -->
+<div class="lp-faq">
+  <h3>よくある質問</h3>
+  <div class="faq-item">
+    <div class="faq-q">Q. どのような方におすすめですか？</div>
+    <div class="faq-a">A. 比較検討して自分に合ったものを選びたい方におすすめです。</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q">Q. 費用はかかりますか？</div>
+    <div class="faq-a">A. 当サイトでの比較・閲覧は無料です。</div>
+  </div>
+</div>
+`
+    : "";
 
   const html = `<!-- 自動生成LP - ${new Date().toISOString()} -->
 <!-- WordPress カスタムHTMLブロック用 / モバイルファースト -->
@@ -109,6 +219,20 @@ export async function generateLpHtml(projectId: string): Promise<string> {
 .lp-float a{display:block;max-width:320px;margin:0 auto;padding:14px 20px;background:linear-gradient(135deg,#ff6b6b 0%,#ee5a5a 100%);color:#fff;text-align:center;text-decoration:none;font-size:15px;font-weight:800;border-radius:10px;animation:pulse 2s infinite}
 .lp-float a:active{transform:scale(.98);animation:none}
 
+/* 信頼シグナル */
+.lp-trust{background:#fff;border-radius:14px;padding:20px 16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.lp-trust h3{font-size:17px;font-weight:800;text-align:center;margin:0 0 16px}
+.trust-items{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.trust-badge{display:inline-block;padding:6px 12px;background:linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%);color:#166534;font-size:12px;font-weight:600;border-radius:20px}
+
+/* FAQ */
+.lp-faq{background:#fff;border-radius:14px;padding:20px 16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.lp-faq h3{font-size:17px;font-weight:800;text-align:center;margin:0 0 16px}
+.faq-item{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f0f0f0}
+.faq-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.faq-q{font-size:14px;font-weight:700;color:#333;margin-bottom:6px}
+.faq-a{font-size:13px;color:#666;padding-left:16px}
+
 /* フッター */
 .lp-footer{text-align:center;padding:20px 0 80px;font-size:11px;color:#999}
 .lp-footer a{color:#667eea}
@@ -141,12 +265,12 @@ export async function generateLpHtml(projectId: string): Promise<string> {
 ${featuresHtml}
   </ul>
 </div>
-
+${trustSignalsHtml}
 <!-- CTA -->
 <a href="${escapeHtml(data.ctaUrl)}" class="lp-cta" target="_blank" rel="noopener">
   ${escapeHtml(data.ctaText)} →
 </a>
-
+${faqHtml}
 <!-- プライバシーポリシー -->
 <div class="lp-privacy">
   <h3>プライバシーポリシー</h3>

@@ -8,19 +8,20 @@ datasource db {
 }
 
 model ResearchProject {
-  id              String                @id @default(uuid())
-  country         String
-  genre           String
-  status          String
-  a8ProgramId     String?               // A8案件との紐付け
-  a8Program       A8Program?            @relation(fields: [a8ProgramId], references: [id])
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
-  competitorSites CompetitorSite[]
-  items           ResearchItem[]
-  templateItems   ResearchProjectItem[]
-  researchRuns    ResearchRun[]
-  riskScore       RiskScore?
+  id                  String                     @id @default(uuid())
+  country             String
+  genre               String
+  status              String
+  a8ProgramId         String?                    // A8案件との紐付け
+  a8Program           A8Program?                 @relation(fields: [a8ProgramId], references: [id])
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+  competitorSites     CompetitorSite[]
+  competitorAnalyses  CompetitorAnalysisResult[]
+  items               ResearchItem[]
+  templateItems       ResearchProjectItem[]
+  researchRuns        ResearchRun[]
+  riskScore           RiskScore?
 
   @@index([a8ProgramId])
 }
@@ -78,6 +79,38 @@ model CompetitorSite {
   brandDependencyScore Float
   projectId            String
   project              ResearchProject @relation(fields: [projectId], references: [id])
+}
+
+model CompetitorAnalysisResult {
+  id                 String          @id @default(cuid())
+  projectId          String
+  url                String
+  title              String?
+  heroHeadline       String?
+  heroSubheadline    String?
+  hasHeroImage       Boolean         @default(false)
+  ctaCount           Int             @default(0)
+  ctaTexts           Json            @default("[]")  // string[]
+  hasFloatingCta     Boolean         @default(false)
+  sectionCount       Int             @default(0)
+  sectionHeadings    Json            @default("[]")  // string[]
+  hasComparisonTable Boolean         @default(false)
+  hasPriceDisplay    Boolean         @default(false)
+  hasTestimonials    Boolean         @default(false)
+  hasFaq             Boolean         @default(false)
+  appealPoints       Json            @default("[]")  // string[]
+  urgencyPhrases     Json            @default("[]")  // string[]
+  trustSignals       Json            @default("[]")  // string[]
+  wordCount          Int             @default(0)
+  imageCount         Int             @default(0)
+  externalLinkCount  Int             @default(0)
+  scores             Json            // { ctaVisibility, contentDepth, trustBuilding, urgencyLevel, overall }
+  fetchError         String?
+  analyzedAt         DateTime        @default(now())
+  project            ResearchProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([analyzedAt])
 }
 
 model RiskScore {
