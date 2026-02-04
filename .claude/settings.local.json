@@ -20,7 +20,14 @@
       "Bash(\"/c/Program Files/nodejs/npm.cmd\" install git+https://github.com/RenTonoduka/AIT42.git)",
       "Bash(rm:*)",
       "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\")",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:mizu-cool.jp)",
+      "Bash(git restore:*)",
+      "Bash(dir /s /b)",
+      "Bash(npm test:*)"
     ]
   }
 }

@@ -8,6 +8,8 @@ import {
 
 type Row = TemplateRow & { id?: string };
 
+type ItemType = "text" | "url" | "number" | "money" | "note";
+
 export default function TemplateManager({
   scope,
   initialTemplates,
@@ -16,7 +18,7 @@ export default function TemplateManager({
   initialTemplates: Array<{
     id: string;
     label: string;
-    type: any;
+    type: ItemType;
     order: number;
     isActive: boolean;
   }>;
@@ -103,8 +105,8 @@ export default function TemplateManager({
         const payload = normalized.filter((r) => r.label.length > 0);
         await saveResearchItemTemplatesAdmin(scope, payload);
         setSavedAt(new Date().toLocaleString());
-      } catch (e: any) {
-        setError(e?.message ?? "保存に失敗しました");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "保存に失敗しました");
       }
     });
   };

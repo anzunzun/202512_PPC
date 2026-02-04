@@ -29,10 +29,11 @@ export async function GET(
         "cache-control": "no-store",
       },
     });
-  } catch (e: any) {
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Export failed";
     return new Response(
       JSON.stringify(
-        { error: e?.message ?? "Export failed" },
+        { error: message },
         null,
         2
       ),

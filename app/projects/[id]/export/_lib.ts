@@ -1,16 +1,4 @@
-import * as prismaModule from "@/lib/prisma";
-
-function getPrismaClient(): any {
-  const mod: any = prismaModule as any;
-  return mod.default ?? mod.prisma ?? mod.db ?? mod.client;
-}
-
-function pickModel(db: any, candidates: string[]) {
-  for (const key of candidates) {
-    if (db?.[key]) return db[key];
-  }
-  return null;
-}
+import { prisma } from "@/lib/prisma";
 
 export type ExportItemRow = {
   order: number;
@@ -38,24 +26,7 @@ export async function buildProjectExportPayload(params: {
 }): Promise<ProjectExportPayload> {
   const { projectId, scope, includeInactiveTemplates = false } = params;
 
-  const db = getPrismaClient();
-  if (!db) throw new Error("Prisma client が取得できません。@/lib/prisma を確認してください。");
-
-  const ResearchProject = pickModel(db, ["researchProject", "project"]);
-  const ResearchItemTemplate = pickModel(db, ["researchItemTemplate"]);
-  const ResearchProjectItem = pickModel(db, ["researchProjectItem"]);
-
-  if (!ResearchProject) {
-    throw new Error("Prisma model が見つかりません: researchProject / project");
-  }
-  if (!ResearchItemTemplate) {
-    throw new Error("Prisma model が見つかりません: researchItemTemplate");
-  }
-  if (!ResearchProjectItem) {
-    throw new Error("Prisma model が見つかりません: researchProjectItem");
-  }
-
-  const project = await ResearchProject.findUnique({
+  const project = await prisma.researchProject.findUnique({
     where: { id: projectId },
   });
 
@@ -64,7 +35,7 @@ export async function buildProjectExportPayload(params: {
   }
 
   // 1) templates
-  const templates = await ResearchItemTemplate.findMany({
+  const templates = await prisma.researchItemTemplate.findMany({
     where: {
       scope,
       ...(includeInactiveTemplates ? {} : { isActive: true }),
@@ -73,9 +44,9 @@ export async function buildProjectExportPayload(params: {
   });
 
   // 2) items（存在するテンプレだけ対象）
-  const templateIds = templates.map((t: any) => String(t.id));
+  const templateIds = templates.map((t) => t.id);
   const items = templateIds.length
-    ? await ResearchProjectItem.findMany({
+    ? await prisma.researchProjectItem.findMany({
         where: {
           projectId,
           templateId: { in: templateIds },
@@ -85,22 +56,22 @@ export async function buildProjectExportPayload(params: {
 
   const valueMap = new Map<string, string>();
   for (const it of items) {
-    valueMap.set(String(it.templateId), String(it.value ?? ""));
+    valueMap.set(it.templateId, it.value ?? "");
   }
 
-  const rows: ExportItemRow[] = templates.map((t: any) => ({
-    order: Number(t.order ?? 0),
-    templateId: String(t.id),
-    label: String(t.label ?? ""),
-    value: valueMap.get(String(t.id)) ?? "",
-    isActive: Boolean(t.isActive),
+  const rows: ExportItemRow[] = templates.map((t) => ({
+    order: t.order ?? 0,
+    templateId: t.id,
+    label: t.label ?? "",
+    value: valueMap.get(t.id) ?? "",
+    isActive: t.isActive,
   }));
 
   return {
     project: {
-      id: String(project.id),
-      name: String(project.name ?? project.title ?? project.projectName ?? project.id),
-      updatedAt: project.updatedAt ? new Date(project.updatedAt).toISOString() : null,
+      id: project.id,
+      name: project.genre || project.id,
+      updatedAt: project.updatedAt ? project.updatedAt.toISOString() : null,
     },
     scope,
     exportedAt: new Date().toISOString(),

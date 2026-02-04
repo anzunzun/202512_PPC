@@ -90,8 +90,9 @@ export async function scrapeUrl(
 
     const html = await res.text();
     return parseHtml(u, html);
-  } catch (e: any) {
-    const msg = e?.name === "AbortError" ? "Timeout" : (e?.message ?? "Fetch error");
+  } catch (e) {
+    const isAbort = e instanceof Error && e.name === "AbortError";
+    const msg = isAbort ? "Timeout" : (e instanceof Error ? e.message : "Fetch error");
     return { ...EMPTY_SCRAPED, url: u, fetchError: msg };
   } finally {
     clearTimeout(t);

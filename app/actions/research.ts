@@ -11,12 +11,23 @@ export type RunResearchProjectInput = {
   provider?: string; // "ppc" | "demo" | "manual" (default: "ppc")
 };
 
+export type ResearchResultJson = {
+  version: number;
+  scope: string;
+  provider: string;
+  providerVersion: number;
+  result: Record<string, string | number | undefined>;
+  scores: Record<string, string | number | undefined>;
+  itemsByKey: Record<string, string>;
+  meta?: Record<string, string | number | boolean | null>;
+};
+
 export type RunResearchProjectOutput = {
   status: "ok" | "error";
   runId: string;
   at: string;
   errorMessage?: string;
-  resultJson?: any;
+  resultJson?: ResearchResultJson;
 };
 
 /**
@@ -123,8 +134,8 @@ export async function runResearchProjectAction(
       at: finishedAt.toISOString(),
       resultJson,
     };
-  } catch (e: any) {
-    const msg = e?.message ? String(e.message) : "Unknown error";
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
     const finishedAt = new Date();
 
     // エラーでも Run は error で確定させる

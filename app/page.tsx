@@ -1,20 +1,22 @@
 import Link from "next/link";
 import { getProjects } from "./actions/project";
 
+type Project = Awaited<ReturnType<typeof getProjects>>[number];
+
 export default async function Home() {
   const hasDbConfig = !!process.env.DATABASE_URL;
 
-  let projects: any[] = [];
+  let projects: Project[] = [];
   let dbError: string | null = null;
 
   if (hasDbConfig) {
     try {
       projects = await getProjects();
-    } catch (e: any) {
-      dbError =
-        e?.message?.includes("Can't reach database server")
-          ? "DBに接続できません（localhost:5432 など）。Postgresを起動するか、DATABASE_URLを正しい接続先に変更してください。"
-          : "DBエラーが発生しました。DATABASE_URLやDB状態を確認してください。";
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "";
+      dbError = message.includes("Can't reach database server")
+        ? "DBに接続できません（localhost:5432 など）。Postgresを起動するか、DATABASE_URLを正しい接続先に変更してください。"
+        : "DBエラーが発生しました。DATABASE_URLやDB状態を確認してください。";
       projects = [];
     }
   }
@@ -62,7 +64,7 @@ export default async function Home() {
               </td>
             </tr>
           ) : (
-            projects.map((project: any) => (
+            projects.map((project) => (
               <tr key={project.id}>
                 <td style={{ border: "1px solid #ccc", padding: "8px" }}>{String(project.id).slice(0, 8)}</td>
                 <td style={{ border: "1px solid #ccc", padding: "8px" }}>{project.country}</td>

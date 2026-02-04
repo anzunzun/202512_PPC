@@ -129,8 +129,8 @@ export default function ResearchItemsEditor({
 
         // ★ 保存成功したら「今の値」を基準にする
         setBaselineKey(stableKey(normalized));
-      } catch (e: any) {
-        setError(e?.message ?? "保存に失敗しました");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "保存に失敗しました");
       }
     });
   };

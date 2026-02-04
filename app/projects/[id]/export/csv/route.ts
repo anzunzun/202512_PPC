@@ -31,8 +31,9 @@ export async function GET(
         "cache-control": "no-store",
       },
     });
-  } catch (e: any) {
-    return new Response(`Export failed: ${e?.message ?? "unknown error"}`, {
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "unknown error";
+    return new Response(`Export failed: ${message}`, {
       status: 400,
       headers: { "content-type": "text/plain; charset=utf-8" },
     });

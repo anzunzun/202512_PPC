@@ -1,12 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import * as prismaModule from "@/lib/prisma";
-
-function getPrismaClient(): any {
-  const mod: any = prismaModule as any;
-  return mod.default ?? mod.prisma ?? mod.db ?? mod.client;
-}
+import { prisma } from "@/lib/prisma";
 
 function settingKey(scope: string) {
   return `project_list_summary_template_ids:${scope}`;
@@ -23,10 +18,7 @@ function safeJsonParseArray(s: string): string[] {
 }
 
 export async function getProjectListSummaryTemplateIds(scope: string): Promise<string[]> {
-  const db = getPrismaClient();
-  if (!db?.appSetting) return []; // model未反映などのときは空扱い
-
-  const row = await db.appSetting.findUnique({
+  const row = await prisma.appSetting.findUnique({
     where: { key: settingKey(scope) },
   });
 
@@ -48,14 +40,7 @@ export async function saveProjectListSummaryTemplateIds(params: {
     )
   );
 
-  const db = getPrismaClient();
-  if (!db?.appSetting) {
-    throw new Error(
-      "AppSetting が見つかりません。schema.prisma に AppSetting model を追加して `npx prisma db push` を実行してください。"
-    );
-  }
-
-  await db.appSetting.upsert({
+  await prisma.appSetting.upsert({
     where: { key: settingKey(scope) },
     update: { value: JSON.stringify(cleaned) },
     create: { key: settingKey(scope), value: JSON.stringify(cleaned) },
