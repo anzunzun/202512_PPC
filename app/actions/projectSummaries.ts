@@ -1,24 +1,12 @@
 "use server";
 
-import * as prismaModule from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import type {
   SummaryTemplateMeta,
   ProjectResearchSummaryRow,
 } from "./summaryTypes";
 
-function getPrismaClient(): any {
-  const mod: any = prismaModule as any;
-  return mod.default ?? mod.prisma ?? mod.db ?? mod.client;
-}
-
-function pickModel(db: any, candidates: string[]) {
-  for (const key of candidates) {
-    if (db?.[key]) return db[key];
-  }
-  return null;
-}
-
-function toStr(x: any) {
+function toStr(x: unknown): string {
   return x == null ? "" : String(x);
 }
 
@@ -50,33 +38,10 @@ export async function getProjectsWithResearchSummaryPack(params: {
     onlyActiveTemplates = true,
   } = params;
 
-  const db = getPrismaClient();
-  if (!db) {
-    throw new Error(
-      "Prisma client が取得できません。@/lib/prisma の export を確認してください（default / prisma / db / client のいずれかが必要）。"
-    );
-  }
-
-  const ResearchProject = pickModel(db, ["researchProject", "project"]);
-  const ResearchItemTemplate = pickModel(db, ["researchItemTemplate"]);
-  const ResearchProjectItem = pickModel(db, ["researchProjectItem"]);
-
-  if (!ResearchProject) {
-    throw new Error(
-      "Prisma model が見つかりません: researchProject / project のどちらも存在しない"
-    );
-  }
-  if (!ResearchItemTemplate) {
-    throw new Error("Prisma model が見つかりません: researchItemTemplate");
-  }
-  if (!ResearchProjectItem) {
-    throw new Error("Prisma model が見つかりません: researchProjectItem");
-  }
-
   // projects
-  const projects = (await ResearchProject.findMany({
+  const projects = await prisma.researchProject.findMany({
     orderBy: [{ updatedAt: "desc" }],
-  })) as any[];
+  });
 
   if (projects.length === 0) {
     return { templates: [], rows: [] };
@@ -88,10 +53,11 @@ export async function getProjectsWithResearchSummaryPack(params: {
   // ---- templates 解決 ----
   // 優先: templateIds（ID固定）
   // フォールバック: labels（初回導入用）
-  let templates: any[] = [];
+  type TemplateRecord = { id: string; label: string; order: number };
+  let templates: TemplateRecord[] = [];
 
   if (templateIds.length > 0) {
-    templates = await ResearchItemTemplate.findMany({
+    const found = await prisma.researchItemTemplate.findMany({
       where: {
         scope,
         id: { in: templateIds },
@@ -101,25 +67,25 @@ export async function getProjectsWithResearchSummaryPack(params: {
 
     // templateIds の順序で並べ替える（UIの列順固定）
     const orderMap = new Map(templateIds.map((id, idx) => [id, idx]));
-    templates.sort((a: any, b: any) => {
-      const ai = orderMap.get(String(a.id)) ?? 9999;
-      const bi = orderMap.get(String(b.id)) ?? 9999;
+    found.sort((a, b) => {
+      const ai = orderMap.get(a.id) ?? 9999;
+      const bi = orderMap.get(b.id) ?? 9999;
       return ai - bi;
     });
 
     // 欠損IDがあっても「列が消えない」ようにプレースホルダーを入れる
-    const found = new Set(templates.map((t: any) => String(t.id)));
-    const placeholders = templateIds
-      .filter((id) => !found.has(id))
+    const foundSet = new Set(found.map((t) => t.id));
+    const placeholders: TemplateRecord[] = templateIds
+      .filter((id) => !foundSet.has(id))
       .map((id) => ({
         id,
         label: "(missing template)",
         order: 9999,
       }));
 
-    templates = [...templates, ...placeholders];
+    templates = [...found, ...placeholders];
   } else if (labels.length > 0) {
-    templates = await ResearchItemTemplate.findMany({
+    const found = await prisma.researchItemTemplate.findMany({
       where: {
         scope,
         label: { in: labels },
@@ -130,33 +96,34 @@ export async function getProjectsWithResearchSummaryPack(params: {
 
     // labels の順序に揃える（初回でも列順ブレないように）
     const orderMap = new Map(labels.map((lb, idx) => [lb, idx]));
-    templates.sort((a: any, b: any) => {
-      const ai = orderMap.get(String(a.label)) ?? 9999;
-      const bi = orderMap.get(String(b.label)) ?? 9999;
+    found.sort((a, b) => {
+      const ai = orderMap.get(a.label) ?? 9999;
+      const bi = orderMap.get(b.label) ?? 9999;
       return ai - bi;
     });
+    templates = found;
   } else {
     // サマリ指定なし
     const rows = projects.map((p) => ({
-      projectId: String(p.id),
-      projectName: String(p.name ?? p.title ?? p.projectName ?? p.id),
-      updatedAt: (p.updatedAt as Date) ?? null,
+      projectId: p.id,
+      projectName: p.genre || p.id,
+      updatedAt: p.updatedAt,
       summary: [],
     }));
     return { templates: [], rows };
   }
 
-  const templateMeta: SummaryTemplateMeta[] = templates.map((t: any) => ({
-    templateId: String(t.id),
-    label: String(t.label ?? "(no label)"),
-    order: Number(t.order ?? 0),
+  const templateMeta: SummaryTemplateMeta[] = templates.map((t) => ({
+    templateId: t.id,
+    label: t.label ?? "(no label)",
+    order: t.order ?? 0,
   }));
 
   if (templateMeta.length === 0) {
     const rows = projects.map((p) => ({
-      projectId: String(p.id),
-      projectName: String(p.name ?? p.title ?? p.projectName ?? p.id),
-      updatedAt: (p.updatedAt as Date) ?? null,
+      projectId: p.id,
+      projectName: p.genre || p.id,
+      updatedAt: p.updatedAt,
       summary: (labels.length ? labels : templateIds).map((x) => ({
         templateId: templateIds.length ? x : "",
         label: templateIds.length ? "(missing template)" : x,
@@ -167,10 +134,10 @@ export async function getProjectsWithResearchSummaryPack(params: {
   }
 
   // ---- items 一括取得 ----
-  const projectIds = projects.map((p) => String(p.id));
+  const projectIds = projects.map((p) => p.id);
   const usedTemplateIds = templateMeta.map((t) => t.templateId);
 
-  const items = await ResearchProjectItem.findMany({
+  const items = await prisma.researchProjectItem.findMany({
     where: {
       projectId: { in: projectIds },
       templateId: { in: usedTemplateIds },
@@ -179,20 +146,20 @@ export async function getProjectsWithResearchSummaryPack(params: {
 
   const map = new Map<string, Map<string, string>>();
   for (const it of items) {
-    const pid = String(it.projectId);
-    const tid = String(it.templateId);
+    const pid = it.projectId;
+    const tid = it.templateId;
     if (!map.has(pid)) map.set(pid, new Map());
     map.get(pid)!.set(tid, it.value ?? "");
   }
 
   const rows: ProjectResearchSummaryRow[] = projects.map((p) => {
-    const pid = String(p.id);
+    const pid = p.id;
     const tmap = map.get(pid) ?? new Map<string, string>();
 
     return {
       projectId: pid,
-      projectName: String(p.name ?? p.title ?? p.projectName ?? pid),
-      updatedAt: (p.updatedAt as Date) ?? null,
+      projectName: p.genre || pid,
+      updatedAt: p.updatedAt,
       summary: templateMeta.map((t) => ({
         templateId: t.templateId,
         label: t.label,

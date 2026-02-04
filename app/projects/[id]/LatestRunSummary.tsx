@@ -24,14 +24,22 @@ const CATEGORY_LABELS: Record<string, { label: string; color: string }> = {
   problem: { label: "課題解決", color: "#f59e0b" },
 };
 
+type ResultJson = {
+  itemsByKey?: Record<string, string | undefined>;
+  result?: Record<string, unknown>;
+  scores?: Record<string, unknown>;
+} | null;
+
 export default function LatestRunSummary({
   resultJson,
   runId,
   projectId,
+  scope = "PPC",
 }: {
-  resultJson: any;
+  resultJson: ResultJson;
   runId: string;
   projectId: string;
+  scope?: string;
 }) {
   const itemsByKey = resultJson?.itemsByKey ?? {};
 
@@ -54,7 +62,9 @@ export default function LatestRunSummary({
     if (itemsByKey.suggestedKeywords) {
       suggestion = JSON.parse(itemsByKey.suggestedKeywords);
     }
-  } catch {}
+  } catch (e) {
+    console.error("Failed to parse suggestedKeywords:", e);
+  }
 
   const hasAdCopy = adTitles.length > 0 || adDescs.length > 0;
   const hasKeywords = suggestion && (suggestion.mainKeywords?.length > 0 || suggestion.longTailKeywords?.length > 0);
@@ -77,7 +87,7 @@ export default function LatestRunSummary({
             Run詳細
           </Link>
           <Link
-            href={`/projects/${projectId}/apply?scope=PPC&autorun=1`}
+            href={`/projects/${projectId}/apply?scope=${encodeURIComponent(scope)}&autorun=1`}
             style={{ fontSize: 12, color: "blue", textDecoration: "underline" }}
           >
             再実行して反映

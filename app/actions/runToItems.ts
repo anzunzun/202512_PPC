@@ -20,7 +20,13 @@ type RawRunView = {
   status?: string;
   at?: string;
   errorMessage?: string | null;
-  resultJson?: any;
+  resultJson?: Record<string, unknown> | null;
+};
+
+type ResultJson = {
+  itemsByKey?: Record<string, unknown>;
+  result?: Record<string, unknown>;
+  scores?: Record<string, unknown>;
 };
 
 export async function runResearchAndPreview(input: {
@@ -47,25 +53,24 @@ export async function runResearchAndPreview(input: {
     orderBy: [{ startedAt: "desc" }, { id: "desc" }],
   });
 
-  const atDate =
-    (runRecord as any)?.finishedAt ?? (runRecord as any)?.startedAt ?? null;
+  const atDate = runRecord?.finishedAt ?? runRecord?.startedAt ?? null;
 
   const raw: RawRunView = runRecord
     ? {
-        runId: String((runRecord as any).id),
-        status: String((runRecord as any).status ?? ""),
-        at: atDate?.toISOString?.() ?? (atDate ? String(atDate) : ""),
-        errorMessage: (runRecord as any).errorMessage ?? null,
-        resultJson: (runRecord as any).resultJson,
+        runId: runRecord.id,
+        status: runRecord.status ?? "",
+        at: atDate?.toISOString?.() ?? "",
+        errorMessage: runRecord.errorMessage ?? null,
+        resultJson: runRecord.resultJson as Record<string, unknown> | null,
       }
     : { status: "error", errorMessage: "Runがありません" };
 
-  const resultJson = ((runRecord as any)?.resultJson ?? null) as any;
+  const resultJson = (runRecord?.resultJson ?? null) as ResultJson | null;
 
   // resultJsonの取り出し（research.ts 側の保存形式に合わせる）
-  const itemsByKey: Record<string, any> = resultJson?.itemsByKey ?? {};
-  const resultObj: Record<string, any> = resultJson?.result ?? {};
-  const scoresObj: Record<string, any> = resultJson?.scores ?? {};
+  const itemsByKey: Record<string, unknown> = resultJson?.itemsByKey ?? {};
+  const resultObj: Record<string, unknown> = resultJson?.result ?? {};
+  const scoresObj: Record<string, unknown> = resultJson?.scores ?? {};
 
   // テンプレ
   const templates = await prisma.researchItemTemplate.findMany({
@@ -80,10 +85,10 @@ export async function runResearchAndPreview(input: {
   });
 
   const curByTemplateId = new Map<string, string>();
-  for (const it of projectItemsNew as any[]) {
-    const tid = String(it.templateId ?? "").trim();
+  for (const it of projectItemsNew) {
+    const tid = it.templateId.trim();
     if (!tid) continue;
-    curByTemplateId.set(tid, String(it.value ?? ""));
+    curByTemplateId.set(tid, it.value ?? "");
   }
 
   const pickProposed = (keyVal: string): string => {
@@ -105,11 +110,11 @@ export async function runResearchAndPreview(input: {
     return "";
   };
 
-  const preview: PreviewRow[] = (templates as any[]).map((t) => {
-    const templateId = String(t.id);
-    const label = String(t.label ?? "");
-    const type = String(t.type ?? "text");
-    const order = Number(t.order ?? 0);
+  const preview: PreviewRow[] = templates.map((t) => {
+    const templateId = t.id;
+    const label = t.label;
+    const type = t.type ?? "text";
+    const order = t.order ?? 0;
     const key = t.key ?? null;
 
     // ✅ 新方式のみ（旧ResearchItemは読まない）

@@ -33,6 +33,18 @@ type KeywordSuggestionData = {
   grouped?: Record<string, SuggestedKeyword[]>;
 };
 
+type RawRunView = {
+  runId?: string;
+  status?: string;
+  at?: string;
+  errorMessage?: string | null;
+  resultJson?: {
+    itemsByKey?: Record<string, unknown>;
+    result?: Record<string, unknown>;
+    scores?: Record<string, unknown>;
+  } | null;
+};
+
 export default function ApplyClient({
   projectId,
   scope,
@@ -44,9 +56,10 @@ export default function ApplyClient({
 }) {
   const [isPending, startTransition] = useTransition();
 
-  const [raw, setRaw] = useState<any>(null);
+  const [raw, setRaw] = useState<RawRunView | null>(null);
   const [preview, setPreview] = useState<PreviewRow[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [overwrite, setOverwrite] = useState(false);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
@@ -105,16 +118,23 @@ export default function ApplyClient({
   }, [rows, checked]);
 
   async function refreshPreview(doRun: boolean) {
-    const res = await runResearchAndPreview({ projectId, scope, doRun });
+    try {
+      setError(null);
+      const res = await runResearchAndPreview({ projectId, scope, doRun });
 
-    setRaw(res.raw);
-    setPreview(res.preview);
+      setRaw(res.raw);
+      setPreview(res.preview);
 
-    const init: Record<string, boolean> = {};
-    for (const r of res.preview) init[r.templateId] = false;
-    setChecked(init);
+      const init: Record<string, boolean> = {};
+      for (const r of res.preview) init[r.templateId] = false;
+      setChecked(init);
 
-    setLoaded(true);
+      setLoaded(true);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "データ取得に失敗しました";
+      setError(msg);
+      setLoaded(true);
+    }
   }
 
   function loadLatestOnly() {
@@ -175,28 +195,35 @@ export default function ApplyClient({
     if (selectedTemplateIds.length === 0) return;
 
     startTransition(async () => {
-      const res = await applyPreviewToProjectItems({
-        projectId,
-        scope,
-        overwrite,
+      try {
+        setError(null);
+        const res = await applyPreviewToProjectItems({
+          projectId,
+          scope,
+          overwrite,
 
-        selectedTemplateIds,
-        selections: selectedTemplateIds,
+          selectedTemplateIds,
+          selections: selectedTemplateIds,
 
-        preview: rows.map((r) => ({
-          templateId: r.templateId,
-          label: r.label,
-          type: r.type,
-          order: r.order,
-          proposedValue: r.proposedValue,
-          currentValue: r.currentValue,
-          key: r.key ?? null,
-          selected: Boolean(checked[r.templateId]),
-        })),
-      });
+          preview: rows.map((r) => ({
+            templateId: r.templateId,
+            label: r.label,
+            type: r.type,
+            order: r.order,
+            proposedValue: r.proposedValue,
+            currentValue: r.currentValue,
+            key: r.key ?? null,
+            selected: Boolean(checked[r.templateId]),
+          })),
+        });
 
-      await refreshPreview(false);
-      alert(`反映: ${res.applied} / スキップ: ${res.skipped}`);
+        await refreshPreview(false);
+        alert(`反映: ${res.applied} / スキップ: ${res.skipped}`);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "反映に失敗しました";
+        setError(msg);
+        alert(`エラー: ${msg}`);
+      }
     });
   }
 
@@ -212,6 +239,11 @@ export default function ApplyClient({
 
   return (
     <div style={{ padding: 16, display: "grid", gap: 12 }}>
+      {error && (
+        <div style={{ padding: 12, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, color: "#991b1b" }}>
+          <strong>エラー:</strong> {error}
+        </div>
+      )}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>Run → プレビュー → 選択して反映（安全版）</div>
@@ -368,13 +400,14 @@ export default function ApplyClient({
 /**
  * キーワード提案表示コンポーネント
  */
-function KeywordSuggestionSection({ raw }: { raw: any }) {
+function KeywordSuggestionSection({ raw }: { raw: RawRunView | null }) {
   const suggestion = useMemo((): KeywordSuggestionData | null => {
     try {
       // resultJson.itemsByKey に保存されている
       const itemsByKey = raw?.resultJson?.itemsByKey;
-      if (!itemsByKey?.suggestedKeywords) return null;
-      return JSON.parse(itemsByKey.suggestedKeywords);
+      const suggestedKeywordsStr = itemsByKey?.suggestedKeywords;
+      if (typeof suggestedKeywordsStr !== "string") return null;
+      return JSON.parse(suggestedKeywordsStr);
     } catch {
       return null;
     }
