@@ -39,8 +39,9 @@ export default async function Home() {
         </div>
       )}
 
-      <div style={{ marginTop: 8, marginBottom: 12 }}>
+      <div style={{ marginTop: 8, marginBottom: 12, display: "flex", gap: "16px" }}>
         <Link href="/projects/new">新規作成</Link>
+        <Link href="/a8-finder" style={{ color: "#0066cc" }}>A8案件ファインダー</Link>
       </div>
 
       <table style={{ marginTop: "20px", borderCollapse: "collapse", width: "100%", opacity: dbOk ? 1 : 0.6 }}>
