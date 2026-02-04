@@ -77,6 +77,12 @@ export default async function ProjectDetailPage({
           >
             LP生成
           </Link>
+          <Link
+            href={`/projects/${id}/competitor-analysis`}
+            style={{ color: "#f59e0b", textDecoration: "underline", fontWeight: 700 }}
+          >
+            競合LP分析
+          </Link>
         </div>
       </div>
 

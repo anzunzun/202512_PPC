@@ -16,6 +16,7 @@ export type ScrapedData = {
   hasRedirectScript: boolean;
   hasIframe: boolean;
   bodyText: string; // リスク判定用のテキスト
+  rawHtml: string; // 構造分析用のHTML
   keywords: string[];
   fetchError: string | null;
 };
@@ -33,6 +34,7 @@ const EMPTY_SCRAPED: ScrapedData = {
   hasRedirectScript: false,
   hasIframe: false,
   bodyText: "",
+  rawHtml: "",
   keywords: [],
   fetchError: null,
 };
@@ -129,6 +131,7 @@ export function parseHtml(url: string, html: string): ScrapedData {
     hasRedirectScript,
     hasIframe,
     bodyText: bodyText.slice(0, 5000), // 5KB上限
+    rawHtml: html.slice(0, 50000), // 50KB上限
     keywords,
     fetchError: null,
   };

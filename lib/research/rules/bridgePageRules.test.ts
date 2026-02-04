@@ -16,6 +16,7 @@ function createMockScrapedData(overrides: Partial<ScrapedData> = {}): ScrapedDat
     hasRedirectScript: false,
     hasIframe: false,
     bodyText: "これは十分な長さのテストコンテンツです。".repeat(50),
+    rawHtml: "",
     keywords: ["test", "keyword"],
     fetchError: null,
     ...overrides,

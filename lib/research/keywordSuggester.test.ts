@@ -19,6 +19,7 @@ function createMockScrapedData(overrides: Partial<ScrapedData> = {}): ScrapedDat
     hasRedirectScript: false,
     hasIframe: false,
     bodyText: "ペアアクセサリーは、カップルで身につけることで絆を深められます。ステンレス製なので金属アレルギーの方も安心。プレゼントにもおすすめです。",
+    rawHtml: "",
     keywords: ["ペア", "アクセサリー", "カップル", "ステンレス"],
     fetchError: null,
     ...overrides,
