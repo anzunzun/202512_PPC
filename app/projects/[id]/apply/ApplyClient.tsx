@@ -9,6 +9,7 @@ import {
   type PreviewRow,
 } from "@/app/actions/runToItems";
 import { isEmptyLike, normalizeEmptyLike } from "@/lib/emptyLike";
+import NegativeKeywordSettings from "@/app/components/NegativeKeywordSettings";
 
 // Inline type to avoid client/server module import issues
 type SuggestedKeyword = {
@@ -63,6 +64,7 @@ export default function ApplyClient({
 
   const [overwrite, setOverwrite] = useState(false);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [customNegativeKeywords, setCustomNegativeKeywords] = useState<string[]>([]);
 
   const rows: UiRow[] = useMemo(() => {
     return preview.map((r) => {
@@ -391,8 +393,11 @@ export default function ApplyClient({
         })}
       </div>
 
+      {/* カスタム除外キーワード設定 */}
+      <NegativeKeywordSettings onKeywordsChange={setCustomNegativeKeywords} />
+
       {/* キーワード提案セクション */}
-      <KeywordSuggestionSection raw={raw} />
+      <KeywordSuggestionSection raw={raw} customNegativeKeywords={customNegativeKeywords} />
     </div>
   );
 }
@@ -400,7 +405,13 @@ export default function ApplyClient({
 /**
  * キーワード提案表示コンポーネント
  */
-function KeywordSuggestionSection({ raw }: { raw: RawRunView | null }) {
+function KeywordSuggestionSection({
+  raw,
+  customNegativeKeywords = [],
+}: {
+  raw: RawRunView | null;
+  customNegativeKeywords?: string[];
+}) {
   const suggestion = useMemo((): KeywordSuggestionData | null => {
     try {
       // resultJson.itemsByKey に保存されている
@@ -424,6 +435,20 @@ function KeywordSuggestionSection({ raw }: { raw: RawRunView | null }) {
 
   const grouped = suggestion.grouped || {};
 
+  // カスタム除外キーワードと自動検出された除外キーワードを結合
+  const allNegativeKeywords = useMemo(() => {
+    const autoNegatives = suggestion.negativeKeywords || [];
+    return [...new Set([...autoNegatives, ...customNegativeKeywords])];
+  }, [suggestion.negativeKeywords, customNegativeKeywords]);
+
+  // カスタム除外キーワードでフィルタリングされたキーワードかチェック
+  const isFiltered = (keyword: string): boolean => {
+    const lowerKw = keyword.toLowerCase();
+    return customNegativeKeywords.some(neg =>
+      lowerKw.includes(neg.toLowerCase()) || neg.toLowerCase().includes(lowerKw)
+    );
+  };
+
   return (
     <div style={{ marginTop: 24, padding: 20, border: "1px solid #ddd", borderRadius: 12, background: "#fafafa" }}>
       <div style={{ marginBottom: 16 }}>
@@ -437,12 +462,19 @@ function KeywordSuggestionSection({ raw }: { raw: RawRunView | null }) {
       {/* カテゴリ別キーワード */}
       <div style={{ display: "grid", gap: 16 }}>
         {Object.entries(categoryLabels).map(([cat, info]) => {
-          const keywords = grouped[cat] || [];
-          if (keywords.length === 0) return null;
+          const allKeywords = grouped[cat] || [];
+          // カスタム除外キーワードに該当するものは非表示
+          const filteredKeywords = allKeywords.filter(kw => !isFiltered(kw.keyword));
+          const filteredCount = allKeywords.length - filteredKeywords.length;
+          // 最大15件表示
+          const keywords = filteredKeywords.slice(0, 15);
+          const moreCount = filteredKeywords.length - 15;
+
+          if (filteredKeywords.length === 0 && filteredCount === 0) return null;
 
           return (
             <div key={cat} style={{ background: "#fff", borderRadius: 8, padding: 16, border: "1px solid #eee" }}>
-              <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span
                   style={{
                     display: "inline-block",
@@ -457,45 +489,106 @@ function KeywordSuggestionSection({ raw }: { raw: RawRunView | null }) {
                   {info.label}
                 </span>
                 <span style={{ fontSize: 12, opacity: 0.7 }}>{info.description}</span>
+                {filteredCount > 0 && (
+                  <span style={{ fontSize: 11, color: "#92400e", background: "#fef3c7", padding: "2px 6px", borderRadius: 4 }}>
+                    {filteredCount}件除外済
+                  </span>
+                )}
               </div>
 
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {keywords.map((kw, idx) => (
-                  <KeywordChip key={idx} keyword={kw} color={info.color} />
-                ))}
-              </div>
+              {keywords.length > 0 ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                  {keywords.map((kw, idx) => (
+                    <KeywordChip
+                      key={idx}
+                      keyword={kw}
+                      color={info.color}
+                    />
+                  ))}
+                  {moreCount > 0 && (
+                    <span style={{ fontSize: 12, opacity: 0.6, padding: "6px 0" }}>
+                      ...他{moreCount}件
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, opacity: 0.5, fontStyle: "italic" }}>
+                  すべて除外キーワードに該当
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* 除外キーワード（商標） */}
-      {suggestion.negativeKeywords && suggestion.negativeKeywords.length > 0 && (
+      {/* 除外キーワード（商標 + カスタム） */}
+      {allNegativeKeywords.length > 0 && (
         <div style={{ marginTop: 16, padding: 16, background: "#fef2f2", borderRadius: 8, border: "1px solid #fecaca" }}>
           <div style={{ marginBottom: 8, fontWeight: 700, color: "#991b1b", fontSize: 14 }}>
-            除外推奨キーワード（商標・ブランド名）
+            除外キーワード（全{allNegativeKeywords.length}件）
           </div>
           <div style={{ fontSize: 13, opacity: 0.9 }}>
-            以下のキーワードは商標を含むため、広告配信では除外してください：
+            以下のキーワードは広告配信から除外されます：
           </div>
-          <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {suggestion.negativeKeywords.map((kw, idx) => (
-              <span
-                key={idx}
-                style={{
-                  display: "inline-block",
-                  padding: "4px 10px",
-                  borderRadius: 4,
-                  background: "#fee2e2",
-                  color: "#991b1b",
-                  fontSize: 12,
-                  textDecoration: "line-through",
-                }}
-              >
-                {kw}
-              </span>
-            ))}
-          </div>
+
+          {/* 自動検出（商標） */}
+          {suggestion.negativeKeywords && suggestion.negativeKeywords.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#991b1b", marginBottom: 6 }}>
+                自動検出（商標・ブランド名）: {suggestion.negativeKeywords.length}件
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {suggestion.negativeKeywords.map((kw, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      display: "inline-block",
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      background: "#fee2e2",
+                      color: "#991b1b",
+                      fontSize: 12,
+                      textDecoration: "line-through",
+                    }}
+                  >
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* カスタム除外キーワード */}
+          {customNegativeKeywords.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#991b1b", marginBottom: 6 }}>
+                カスタム設定: {customNegativeKeywords.length}件
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {customNegativeKeywords.slice(0, 100).map((kw, idx) => (
+                  <span
+                    key={idx}
+                    style={{
+                      display: "inline-block",
+                      padding: "4px 10px",
+                      borderRadius: 4,
+                      background: "#fef3c7",
+                      color: "#92400e",
+                      fontSize: 12,
+                      textDecoration: "line-through",
+                    }}
+                  >
+                    {kw}
+                  </span>
+                ))}
+                {customNegativeKeywords.length > 100 && (
+                  <span style={{ fontSize: 12, opacity: 0.6, padding: "4px 0" }}>
+                    ...他{customNegativeKeywords.length - 100}件
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -528,7 +621,13 @@ const MATCH_LABELS: Record<string, string> = {
   exact: "完全一致",
 };
 
-function KeywordChip({ keyword, color }: { keyword: SuggestedKeyword; color: string }) {
+function KeywordChip({
+  keyword,
+  color,
+}: {
+  keyword: SuggestedKeyword;
+  color: string;
+}) {
   const [showDetail, setShowDetail] = useState(false);
   const vol = VOLUME_ICONS[keyword.volumeRisk || "medium"];
   const matchLabel = MATCH_LABELS[keyword.matchType || "broad"];
